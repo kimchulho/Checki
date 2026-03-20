@@ -7,7 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase URL or Anon Key is missing. Database features will not work.');
 }
 
-// Only initialize if URL is present to prevent crash
-export const supabase = supabaseUrl 
-  ? createClient(supabaseUrl, supabaseAnonKey || '') 
+// Only initialize if both URL and Key are present to prevent crash
+export const supabase = (supabaseUrl && supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey) 
   : (null as any);
