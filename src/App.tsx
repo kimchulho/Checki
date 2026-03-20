@@ -696,8 +696,15 @@ function AttendanceView({
                   <h2 className="text-4xl font-sans font-bold text-white mb-1">
                     {view === 'success' ? t('terminal.messages.success', { title: t('admin.title') }) : t('terminal.messages.error')}
                   </h2>
-                  <p className="text-white/90 font-medium">
-                    {view === 'success' ? t('terminal.messages.success_desc') : t('terminal.messages.error_desc')}
+                  <p className="text-white/90 font-medium flex items-center justify-center gap-1">
+                    {view === 'success' ? (
+                      <>
+                        {t('terminal.messages.success_desc')}
+                        <ShieldCheck className="w-5 h-5" />
+                      </>
+                    ) : (
+                      t('terminal.messages.error_desc')
+                    )}
                   </p>
                 </motion.div>
               </motion.div>
