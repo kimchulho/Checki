@@ -236,7 +236,8 @@ const resources = {
         "location": {
           "terminal": "단말기",
           "view": "위치 보기",
-          "title": "{{name}} 위치"
+          "title": "{{name}} 위치",
+          "disclaimer": "실제 위치와 다를 수 있습니다."
         },
         "parent": {
           "title": "학부모 안심 서비스",
@@ -615,7 +616,8 @@ const resources = {
         "location": {
           "terminal": "Terminal",
           "view": "View Location",
-          "title": "{{name}} Location"
+          "title": "{{name}} Location",
+          "disclaimer": "The actual location may differ."
         },
         "parent": {
           "title": "Parent Safety Service",
@@ -994,7 +996,8 @@ const resources = {
         "location": {
           "terminal": "端末",
           "view": "位置を見る",
-          "title": "{{name}}の位置"
+          "title": "{{name}}の位置",
+          "disclaimer": "実際の位置と異なる場合があります。"
         },
         "terminal_qr": {
           "title": "端末登録QR",

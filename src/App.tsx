@@ -2732,7 +2732,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   src={`https://maps.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lng}&z=15&output=embed`}
                 ></iframe>
               </div>
-              <div className="p-6 bg-slate-50 flex justify-end">
+              <div className="p-6 bg-slate-50 flex items-center justify-between">
+                <p className="text-sm text-slate-500 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {t('admin.location.disclaimer')}
+                </p>
                 <button
                   onClick={() => setSelectedLocation(null)}
                   className="px-6 py-3 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition-colors"
@@ -3057,6 +3061,8 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
       return;
     }
 
+    let isMounted = true;
+
     const verifyToken = async () => {
       try {
         const response = await fetch('/api/kiosk/verify-token', {
@@ -3066,6 +3072,8 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
         });
 
         const data = await response.json();
+
+        if (!isMounted) return;
 
         if (!response.ok) {
           throw new Error(data.error || '인증에 실패했습니다.');
@@ -3085,9 +3093,10 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
         setStatus('success');
         
         setTimeout(() => {
-          navigate('/kiosk');
+          if (isMounted) navigate('/kiosk');
         }, 2000);
       } catch (err: any) {
+        if (!isMounted) return;
         setStatus('error');
         if (err.message === 'Invalid or expired token') {
           setError(t('terminal.messages.registration.invalid_qr'));
@@ -3098,6 +3107,10 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
     };
 
     verifyToken();
+
+    return () => {
+      isMounted = false;
+    };
   }, [searchParams, navigate, setKioskAuth, setKioskSchoolInfo, setTerminalName, t]);
 
   return (
