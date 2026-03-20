@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Routes, Route, useNavigate, useLocation, Link, useSearchParams, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff } from 'lucide-react';
+import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff, Smartphone } from 'lucide-react';
 import { encryptBlob, uploadAttendanceData, decryptBlob } from './services/securityService';
 import { supabase } from './services/supabaseClient';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -162,7 +162,7 @@ function LandingPage() {
               to="/kiosk" 
               className="w-full sm:w-auto bg-orange-500 text-white px-10 py-5 rounded-[2rem] text-xl font-black hover:bg-orange-600 transition-all shadow-xl shadow-orange-200 flex items-center justify-center gap-3 group"
             >
-              <Camera className="w-6 h-6" />
+              <Smartphone className="w-6 h-6" />
               {t('landing.cta_button')}
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -173,7 +173,7 @@ function LandingPage() {
 
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
           {[
-            { icon: <SmartphoneCharging className="w-8 h-8 text-orange-500" />, title: t('landing.feature_1_title'), desc: t('landing.feature_1_desc') },
+            { icon: <Smartphone className="w-8 h-8 text-orange-500" />, title: t('landing.feature_1_title'), desc: t('landing.feature_1_desc') },
             { icon: <UserCheck className="w-8 h-8 text-orange-500" />, title: t('landing.feature_2_title'), desc: t('landing.feature_2_desc') },
             { icon: <ImageIcon className="w-8 h-8 text-orange-500" />, title: t('landing.feature_3_title'), desc: t('landing.feature_3_desc') }
           ].map((feature, i) => (
@@ -578,7 +578,7 @@ function AttendanceView({
             <Check className="text-white w-6 h-6" strokeWidth={3} />
           </div>
           <div>
-            <h1 className="font-cute text-2xl font-bold text-orange-600 leading-tight">
+            <h1 className="font-sans text-2xl font-bold text-orange-600 leading-tight">
               {t('admin.title')}
             </h1>
             <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{terminalName || t('admin.title')}</p>
@@ -693,7 +693,7 @@ function AttendanceView({
                       <Zap className="text-red-500 w-14 h-14" />
                     )}
                   </div>
-                  <h2 className="text-4xl font-cute font-bold text-white mb-1">
+                  <h2 className="text-4xl font-sans font-bold text-white mb-1">
                     {view === 'success' ? t('terminal.messages.success', { title: t('admin.title') }) : t('terminal.messages.error')}
                   </h2>
                   <p className="text-white/90 font-medium">
@@ -2150,7 +2150,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   </>
                 ) : (
                   <>
-                    <Camera className="w-5 h-5 text-orange-500" />
+                    <Smartphone className="w-5 h-5 text-orange-500" />
                     {t('admin.tabs.terminals')}
                   </>
                 )}
@@ -2209,7 +2209,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   {isGeneratingToken ? (
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Camera className="w-3.5 h-3.5" />
+                    <Smartphone className="w-3.5 h-3.5" />
                   )}
                   <span>{t('admin.buttons.register_terminal')}</span>
                 </button>
@@ -2372,7 +2372,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center shrink-0">
-                          <Camera className="w-6 h-6" />
+                          <Smartphone className="w-6 h-6" />
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 text-lg">{terminal.name}</p>
@@ -2441,7 +2441,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <Camera className="w-6 h-6" />
+            <Smartphone className="w-6 h-6" />
             <span className="text-[10px] font-bold">{t('admin.tabs.terminals')}</span>
           </button>
         </div>
@@ -2732,17 +2732,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   src={`https://maps.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lng}&z=15&output=embed`}
                 ></iframe>
               </div>
-              <div className="p-6 bg-slate-50 flex items-center justify-between">
+              <div className="p-6 bg-slate-50 flex items-center">
                 <p className="text-sm text-slate-500 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
                   {t('admin.location.disclaimer')}
                 </p>
-                <button
-                  onClick={() => setSelectedLocation(null)}
-                  className="px-6 py-3 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition-colors"
-                >
-                  {t('admin.terminal_qr.close')}
-                </button>
               </div>
             </motion.div>
           </div>
@@ -2851,7 +2845,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
             >
               <div className="mb-6">
                 <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Camera className="w-8 h-8" />
+                  <Smartphone className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl font-bold text-slate-800">{t('admin.title')} {t('admin.terminal_qr.title')}</h3>
                 <p className="text-slate-500 text-sm mt-1">{t('admin.terminal_qr.desc')}</p>
