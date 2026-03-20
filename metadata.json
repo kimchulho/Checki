@@ -1,0 +1,5 @@
+{
+  "name": "Checki",
+  "description": "Academy attendance app with numeric keypad and photo check-in.",
+  "requestFramePermissions": []
+}

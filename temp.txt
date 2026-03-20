@@ -1,0 +1,701 @@
+275:function AttendanceView({ 
+276-  view, setView, currentTime, videoRef, flash, 
+277-  isProcessing, isPowerSaving, setIsPowerSaving,
+278-  showModeSelector, setShowModeSelector, currentCheckyMode, setCurrentCheckyMode,
+279-  directInput, setDirectInput, showDirectInput, setShowDirectInput,
+280-  pendingChildName, setPendingChildName,
+281-  triggerInstantCapture,
+282-  currentLocation, setCurrentLocation,
+283-  kioskAuth, setKioskAuth, kioskSchoolInfo, setKioskSchoolInfo,
+284-  getModeOptions,
+285-  terminalName,
+286-  facingMode, setFacingMode,
+287-  restartCamera
+288-}: any) {
+289-  const { t, i18n } = useTranslation();
+290-  const dateLocale = i18n.language === 'ko' ? 'ko-KR' : i18n.language === 'ja' ? 'ja-JP' : 'en-US';
+291-  const [username, setUsername] = useState('');
+292-  const [password, setPassword] = useState('');
+293-  const [loginError, setLoginError] = useState('');
+294-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+295-  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+296-  const [touchPosition, setTouchPosition] = useState({ x: 0, y: 0 });
+297-  const [childrenList, setChildrenList] = useState<any[]>([]);
+298-  const [isLoadingChildren, setIsLoadingChildren] = useState(false);
+299-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+300-  const [isInstallable, setIsInstallable] = useState(false);
+301-  const [isStandalone, setIsStandalone] = useState(false);
+302-  const [installGuideType, setInstallGuideType] = useState<'ios' | 'android' | 'other' | null>(null);
+303-
+304-  useEffect(() => {
+305-    let isStandaloneMode = false;
+306-    const checkStandalone = () => {
+307-      isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
+308-                         window.matchMedia('(display-mode: fullscreen)').matches ||
+309-                         window.matchMedia('(display-mode: minimal-ui)').matches ||
+310-                         (window.navigator as any).standalone === true ||
+311-                         document.referrer.includes('android-app://');
+312-      setIsStandalone(isStandaloneMode);
+313-    };
+314-    
+315-    checkStandalone();
+316-    window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
+317-
+318-    const handleBeforeInstallPrompt = (e: any) => {
+319-      e.preventDefault();
+320-      setDeferredPrompt(e);
+321-      setIsInstallable(true);
+322-    };
+323-
+324-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+325-
+326-    if (isIos() && isSafari() && !isStandaloneMode) {
+327-      setIsInstallable(true);
+328-    }
+329-
+330-    return () => {
+331-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+332-      window.matchMedia('(display-mode: standalone)').removeEventListener('change', checkStandalone);
+333-    };
+334-  }, []);
+335-
+336-  const handleInstallClick = async () => {
+337-    if (deferredPrompt) {
+338-      deferredPrompt.prompt();
+339-      const { outcome } = await deferredPrompt.userChoice;
+340-      if (outcome === 'accepted') {
+341-        setDeferredPrompt(null);
+342-        setIsInstallable(false);
+343-      }
+344-    } else if (isIos() && isSafari()) {
+345-      setInstallGuideType('ios');
+346-    } else {
+347-      const userAgent = window.navigator.userAgent.toLowerCase();
+348-      if (userAgent.includes('android')) {
+349-        setInstallGuideType('android');
+350-      } else {
+351-        setInstallGuideType('other');
+352-      }
+353-    }
+354-  };
+355-
+356-  useEffect(() => {
+357-    if (kioskAuth && kioskSchoolInfo?.id) {
+358-      fetchChildren();
+359-    }
+360-  }, [kioskAuth, kioskSchoolInfo]);
+361-
+362-  const fetchChildren = async () => {
+363-    setIsLoadingChildren(true);
+364-    try {
+365-      const { data, error } = await supabase
+366-        .from('checky_members')
+367-        .select('*')
+368-        .eq('place_id', kioskSchoolInfo.id)
+369-        .order('name', { ascending: true });
+370-      
+371-      if (error) throw error;
+372-      setChildrenList(data || []);
+373-    } catch (err) {
+374-      console.error('Error fetching children:', err);
+375-    } finally {
+376-      setIsLoadingChildren(false);
+377-    }
+378-  };
+379-
+380-  const handleScreenInteraction = (e: React.PointerEvent | React.MouseEvent | React.TouchEvent) => {
+381-    e.preventDefault();
+382-    e.stopPropagation();
+383-    
+384-    let clientX = 0;
+385-    let clientY = 0;
+386-    
+387-    if ('touches' in e && e.touches.length > 0) {
+388-      clientX = e.touches[0].clientX;
+389-      clientY = e.touches[0].clientY;
+390-    } else if ('clientX' in e) {
+391-      clientX = (e as any).clientX;
+392-      clientY = (e as any).clientY;
+393-    }
+394-    
+395-    setTouchPosition({ x: clientX, y: clientY });
+396-    // Use requestAnimationFrame to ensure the position state update is processed
+397-    // before the exit animation starts
+398-    requestAnimationFrame(() => {
+399-      setIsPowerSaving(false);
+400-    });
+401-  };
+402-
+403-  const handleKioskLogin = async (e: React.FormEvent) => {
+404-    e.preventDefault();
+405-    setIsLoggingIn(true);
+406-    setLoginError('');
+407-
+408-    try {
+409-      const response = await fetch('/api/login-school', {
+410-        method: 'POST',
+411-        headers: { 'Content-Type': 'application/json' },
+412-        body: JSON.stringify({ username, password, type: 'kiosk' }),
+413-      });
+414-
+415-      const data = await response.json();
+416-
+417-      if (!response.ok) {
+418-        throw new Error(data.error || 'Login failed');
+419-      }
+420-
+421-      localStorage.setItem('checky_kiosk_auth', 'true');
+422-      localStorage.setItem('checky_kiosk_place_info', JSON.stringify(data.place));
+423-      setKioskAuth(true);
+424-      setKioskSchoolInfo(data.place);
+425-      setUsername('');
+426-      setPassword('');
+427-    } catch (err: any) {
+428-      setLoginError(err.message || '로그인에 실패했습니다.');
+429-    } finally {
+430-      setIsLoggingIn(false);
+431-    }
+432-  };
+433-
+434-  const handleKioskLogout = () => {
+435-    setIsLogoutConfirmOpen(true);
+436-  };
+437-
+438-  const confirmKioskLogout = () => {
+439-    localStorage.removeItem('checky_kiosk_auth');
+440-    localStorage.removeItem('checky_kiosk_place_info');
+441-    localStorage.removeItem('checky_terminal_id');
+442-    setKioskAuth(false);
+443-    setKioskSchoolInfo(null);
+444-    setIsLogoutConfirmOpen(false);
+445-  };
+446-
+447-  const handleModeSelect = (option: string) => {
+448-    if (option === '직접입력') {
+449-      setShowDirectInput(true);
+450-    } else {
+451-      setCurrentCheckyMode(option);
+452-      setShowModeSelector(false);
+453-      if (pendingChildName) {
+454-        triggerInstantCapture(pendingChildName, option);
+455-        setPendingChildName(null);
+456-      }
+457-    }
+458-  };
+459-
+460-  const handleChildClick = (childName: string) => {
+461-    if (isProcessing) return;
+462-    setPendingChildName(childName);
+463-    setShowModeSelector(true);
+464-  };
+465-
+466-  const screensaverVariants = {
+467-    initial: { opacity: 0 },
+468-    animate: (pos: { x: number, y: number }) => ({ 
+469-      opacity: 1,
+470-      WebkitMaskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 0%, black 0%)`,
+471-      maskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 0%, black 0%)`
+472-    }),
+473-    exit: (pos: { x: number, y: number }) => ({ 
+474-      opacity: 1,
+475-      WebkitMaskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 150%, black 150%)`,
+476-      maskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 150%, black 150%)`,
+477-      transition: { duration: 0.8, ease: "easeInOut" }
+478-    })
+479-  };
+480-
+481-  if (!kioskAuth) {
+482-    return (
+483-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+484-        <motion.div 
+485-          initial={{ opacity: 0, y: 20 }}
+486-          animate={{ opacity: 1, y: 0 }}
+487-          className="w-full max-w-md bg-white rounded-[2.5rem] shadow-xl overflow-hidden border border-slate-100"
+488-        >
+489-          <div className="p-8 md:p-10">
+490-            <div className="text-center mb-8">
+491-              <div className="w-20 h-20 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-100">
+492-                <ShieldCheck className="w-10 h-10" />
+493-              </div>
+494-              <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('terminal.messages.unregistered_title', { title: t('admin.title') })}</h1>
+495-              <p className="text-slate-500 text-sm">{t('terminal.messages.unregistered_desc', { title: t('admin.title') })}</p>
+496-            </div>
+497-
+498-            <div className="space-y-6">
+499-              <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 text-center">
+500-                <p className="text-slate-600 font-medium mb-4">{t('terminal.messages.scan_qr_desc')}</p>
+501-                <div className="flex items-center justify-center gap-2 text-orange-500 font-bold text-sm">
+502-                  <Clock className="w-4 h-4" />
+503-                  <span>{t('terminal.messages.qr_valid_time')}</span>
+504-                </div>
+505-              </div>
+506-
+507-              <div className="text-center pt-2">
+508-                <Link to="/" className="text-sm font-bold text-slate-400 hover:text-orange-500 transition-colors">
+509-                  {t('terminal.messages.go_home', { title: t('admin.title') })}
+510-                </Link>
+511-              </div>
+512-            </div>
+513-          </div>
+514-        </motion.div>
+515-      </div>
+516-    );
+517-  }
+518-
+519-  return (
+520-    <div className="fixed inset-0 flex flex-col items-center bg-orange-50 overflow-hidden">
+521-      {/* Header */}
+522-      <header className="w-full max-w-md flex items-center justify-between bg-white/80 backdrop-blur-md p-4 rounded-b-[2rem] shadow-sm border-b border-orange-100 z-20">
+523-        <div className="flex items-center gap-2">
+524-          <div className="w-10 h-10 bg-orange-400 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200" onDoubleClick={handleKioskLogout}>
+525-            <Check className="text-white w-6 h-6" strokeWidth={3} />
+526-          </div>
+527-          <div>
+528-            <h1 className="font-cute text-2xl font-bold text-orange-600 leading-tight">
+529-              {t('admin.title')}
+530-            </h1>
+531-            <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{terminalName || t('admin.title')}</p>
+532-          </div>
+533-        </div>
+534-        <div className="flex flex-col items-end gap-2">
+535-          <div className="flex items-center gap-2">
+536-            {!isStandalone && (
+537-              <button
+538-                onClick={handleInstallClick}
+539-                className="w-8 h-8 flex items-center justify-center bg-orange-100 text-orange-500 rounded-full hover:bg-orange-200 transition-colors"
+540-                title={t('terminal.messages.install_app')}
+541-              >
+542-                <Download className="w-4 h-4" />
+543-              </button>
+544-            )}
+545-            <div
+546-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors bg-slate-100 text-slate-400`}
+547-              title={currentLocation ? t('terminal.messages.gps_receiving') : t('terminal.messages.gps_not_receiving')}
+548-            >
+549-              {currentLocation ? <MapPin className="w-4 h-4" /> : <MapPinOff className="w-4 h-4" />}
+550-            </div>
+551-            <button
+552-              onClick={() => window.location.reload()}
+553-              className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-400 rounded-full hover:bg-orange-50 hover:text-orange-500 transition-colors"
+554-              title={t('terminal.messages.refresh')}
+555-            >
+556-              <RefreshCw className="w-4 h-4" />
+557-            </button>
+558-            <button
+559-              onClick={handleKioskLogout}
+560-              className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-400 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
+561-              title={t('terminal.messages.logout_title', { title: t('admin.title') })}
+562-            >
+563-              <LogOut className="w-4 h-4" />
+564-            </button>
+565-          </div>
+566-        </div>
+567-      </header>
+568-
+569-      {/* Main Content Area */}
+570-      <main className="flex-1 min-h-0 w-full max-w-md flex flex-col gap-4 p-4">
+571-        
+572-        {/* Persistent Camera Feed */}
+573-        <div className="relative w-full aspect-square bg-slate-900 rounded-[2rem] overflow-hidden shadow-xl border-4 border-white shrink-0 transition-all duration-300">
+574-          <video
+575-            ref={videoRef}
+576-            autoPlay
+577-            playsInline
+578-            muted
+579-            className="w-full h-full object-cover"
+580-            style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
+581-          />
+582-          
+583-          {/* Flash Effect */}
+584-          <AnimatePresence>
+585-            {flash && (
+586-              <motion.div
+587-                initial={{ opacity: 0 }}
+588-                animate={{ opacity: 1 }}
+589-                exit={{ opacity: 0 }}
+590-                className="absolute inset-0 bg-white/50 z-30"
+591-              />
+592-            )}
+593-          </AnimatePresence>
+594-
+595-          {/* Clock Indicator */}
+596-          <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 z-40 shadow-lg">
+597-            <Clock className="w-4 h-4 text-white/90" />
+598-            <span className="text-sm text-white font-bold tracking-wide tabular-nums">
+599-              {currentTime.toLocaleDateString(dateLocale, { month: 'numeric', day: 'numeric' })} {currentTime.toLocaleTimeString(dateLocale, { hour12: true, hour: 'numeric', minute: '2-digit', second: '2-digit' })}
+600-            </span>
+601-          </div>
+602-
+603-          {/* Camera Toggle Button */}
+604-          <button
+605-            onClick={() => setFacingMode(facingMode === 'user' ? 'environment' : 'user')}
+606-            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-black/30 backdrop-blur-md text-white rounded-full border border-white/20 hover:bg-black/50 transition-colors z-40"
+607-            title={t('terminal.messages.switch_camera')}
+608-          >
+609-            <SwitchCamera className="w-5 h-5" />
+610-          </button>
+611-
+612-          <button
+613-            onClick={restartCamera}
+614-            className="absolute top-16 right-4 w-10 h-10 flex items-center justify-center bg-black/30 backdrop-blur-md text-white rounded-full border border-white/20 hover:bg-black/50 transition-colors z-40"
+615-            title={t('terminal.messages.restart_camera')}
+616-          >
+617-            <CameraOff className="w-5 h-5" />
+618-          </button>
+619-
+620-          {/* Success/Error Overlays */}
+621-          <AnimatePresence>
+622-            {(view === 'success' || view === 'error') && (
+623-              <motion.div
+624-                initial={{ opacity: 0, scale: 0.9 }}
+625-                animate={{ opacity: 1, scale: 1 }}
+626-                exit={{ opacity: 0, scale: 1.1 }}
+627-                className={`absolute inset-0 z-40 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center ${
+628-                  view === 'success' ? 'bg-orange-400/90' : 'bg-red-500/90'
+629-                }`}
+630-              >
+631-                <motion.div
+632-                  initial={{ y: 20, opacity: 0 }}
+633-                  animate={{ y: 0, opacity: 1 }}
+634-                  transition={{ delay: 0.1 }}
+635-                >
+636-                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+637-                    {view === 'success' ? (
+638-                      <Check className="text-orange-500 w-14 h-14" strokeWidth={3} />
+639-                    ) : (
+640-                      <Zap className="text-red-500 w-14 h-14" />
+641-                    )}
+642-                  </div>
+643-                  <h2 className="text-4xl font-cute font-bold text-white mb-1">
+644-                    {view === 'success' ? t('terminal.messages.success', { title: t('admin.title') }) : t('terminal.messages.error')}
+645-                  </h2>
+646-                  <p className="text-white/90 font-medium">
+647-                    {view === 'success' ? t('terminal.messages.success_desc') : t('terminal.messages.error_desc')}
+648-                  </p>
+649-                </motion.div>
+650-              </motion.div>
+651-            )}
+652-          </AnimatePresence>
+653-        </div>
+654-
+655-        {/* Children Grid Section */}
+656-        <div className="flex-1 flex flex-col gap-4 overflow-hidden relative">
+657-          {isProcessing && (
+658-            <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-3xl">
+659-              <div className="flex items-center gap-2 text-orange-500 font-bold animate-pulse">
+660-                <ShieldCheck className="w-5 h-5" />
+661-                <span>{t('terminal.messages.encrypting')}</span>
+662-              </div>
+663-            </div>
+664-          )}
+665-
+666-          {/* Grid of Children */}
+667-          <div className="w-full flex items-start justify-center h-full">
+668-            {isLoadingChildren ? (
+669-              <div className="h-full flex items-center justify-center">
+670-                <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" />
+671-              </div>
+672-            ) : childrenList.length === 0 ? (
+673-              <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2">
+674-                <Users className="w-12 h-12 opacity-20" />
+675-                <p className="text-sm font-medium">{t('terminal.messages.no_members')}</p>
+676-                <p className="text-[10px]">{t('terminal.messages.register_in_admin')}</p>
+677-              </div>
+678-            ) : (
+679-              <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
+680-                {childrenList.map((child) => {
+681-                  let buttonWidthClass = '';
+682-                  if (childrenList.length === 1) {
+683-                    buttonWidthClass = 'w-full';
+684-                  } else if (childrenList.length === 2) {
+685-                    buttonWidthClass = 'w-[calc(50%-0.375rem)]';
+686-                  } else {
+687-                    buttonWidthClass = 'w-[calc((100%-1.5rem)/3)]';
+688-                  }
+689-                  return (
+690-                    <button
+691-                      key={child.id}
+692-                      onClick={() => handleChildClick(child.name)}
+693-                      className={`flex-shrink-0 h-32 bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center ${buttonWidthClass}`}
+694-                    >
+695-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+696-                        <User className="w-5 h-5 text-orange-500" />
+697-                      </div>
+698-                      <span className="text-lg font-black text-slate-700 truncate w-full text-center">{child.name}</span>
+699-                    </button>
+700-                  );
+701-                })}
+702-              </div>
+703-            )}
+704-          </div>
+705-        </div>
+706-      </main>
+707-
+708-      {/* Install Guide Modal */}
+709-      <AnimatePresence>
+710-        {installGuideType && (
+711-          <motion.div
+712-            initial={{ opacity: 0 }}
+713-            animate={{ opacity: 1 }}
+714-            exit={{ opacity: 0 }}
+715-            className="fixed inset-0 bg-black/40 z-[70] flex items-end justify-center p-4"
+716-            onClick={() => setInstallGuideType(null)}
+717-          >
+718-            <motion.div
+719-              initial={{ y: "100%" }}
+720-              animate={{ y: 0 }}
+721-              exit={{ y: "100%" }}
+722-              className="w-full max-w-md bg-white rounded-[2rem] p-8 space-y-6 shadow-2xl mb-4"
+723-              onClick={e => e.stopPropagation()}
+724-            >
+725-              <div className="text-center space-y-2">
+726-                <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+727-                  <Download className="w-8 h-8 text-orange-500" />
+728-                </div>
+729-                <h3 className="text-xl font-bold text-slate-800">{t('terminal.messages.install_guide_title')}</h3>
+730-                <p className="text-slate-500 text-sm leading-relaxed">
+731-                  {installGuideType === 'ios' && (
+732-                    <>
+733-                      {t('terminal.messages.install_guide_ios_1')} <br/>
+734-                      <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_ios_2')}</span> {t('terminal.messages.install_guide_ios_3')}<br/>
+735-                      <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_ios_4')}</span>{t('terminal.messages.install_guide_ios_5')}
+736-                    </>
+737-                  )}
+738-                  {installGuideType === 'android' && (
+739-                    <>
+740-                      {t('terminal.messages.install_guide_android_1')} <br/>
+741-                      <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_android_2')}</span> {t('terminal.messages.install_guide_android_3')}<br/>
+742-                      <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_android_4')}</span> {t('terminal.messages.install_guide_android_5')} <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_android_6')}</span>{t('terminal.messages.install_guide_android_7')}
+743-                    </>
+744-                  )}
+745-                  {installGuideType === 'other' && (
+746-                    <>
+747-                      {t('terminal.messages.install_guide_other_1')} <br/>
+748-                      <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_other_2')}</span> {t('terminal.messages.install_guide_other_3')}<br/>
+749-                      <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_other_4')}</span> {t('terminal.messages.install_guide_other_5')} <span className="font-bold text-slate-700">{t('terminal.messages.install_guide_other_6')}</span>{t('terminal.messages.install_guide_other_7')}
+750-                    </>
+751-                  )}
+752-                </p>
+753-              </div>
+754-              <button
+755-                onClick={() => setInstallGuideType(null)}
+756-                className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
+757-              >
+758-                {t('terminal.messages.confirm')}
+759-              </button>
+760-            </motion.div>
+761-          </motion.div>
+762-        )}
+763-      </AnimatePresence>
+764-
+765-      {/* Mode Selector Modal */}
+766-      <AnimatePresence>
+767-        {showModeSelector && (
+768-          <motion.div
+769-            initial={{ opacity: 0 }}
+770-            animate={{ opacity: 1 }}
+771-            exit={{ opacity: 0 }}
+772-            className="fixed inset-0 bg-black/40 z-[60] flex items-end justify-center p-4"
+773-            onClick={() => {
+774-              setShowModeSelector(false);
+775-              setPendingChildName(null);
+776-            }}
+777-          >
+778-            <motion.div
+779-              initial={{ y: "100%" }}
+780-              animate={{ y: 0 }}
+781-              exit={{ y: "100%" }}
+782-              className="w-full max-w-md bg-white rounded-t-[2.5rem] p-8 space-y-6"
+783-              onClick={e => e.stopPropagation()}
+784-            >
+785-              <div className="text-center">
+786-                <h3 className="text-xl font-bold text-slate-800">{t('terminal.messages.select_activity', { title: t('admin.title') })}</h3>
+787-                <p className="text-slate-500 text-sm">{t('terminal.messages.what_activity')}</p>
+788-              </div>
+789-              <div className="grid grid-cols-2 gap-3">
+790-                {getModeOptions().map((option) => (
+791-                  <button
+792-                    key={option}
+793-                    onClick={() => handleModeSelect(option)}
+794-                    className={`py-4 rounded-2xl font-bold text-lg transition-all border ${
+795-                      currentCheckyMode === option 
+796-                        ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-100' 
+797-                        : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'
+798-                    }`}
+799-                  >
+800-                    {option}
+801-                  </button>
+802-                ))}
+803-              </div>
+804-              <button
+805-                onClick={() => {
+806-                  setShowModeSelector(false);
+807-                  setPendingChildName(null);
+808-                }}
+809-                className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold"
+810-              >
+811-                {t('terminal.messages.cancel')}
+812-              </button>
+813-            </motion.div>
+814-          </motion.div>
+815-        )}
+816-      </AnimatePresence>
+817-
+818-      {/* Direct Input Modal */}
+819-      <AnimatePresence>
+820-        {showDirectInput && (
+821-          <motion.div
+822-            initial={{ opacity: 0 }}
+823-            animate={{ opacity: 1 }}
+824-            exit={{ opacity: 0 }}
+825-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+826-          >
+827-            <motion.div
+828-              initial={{ scale: 0.9, opacity: 0 }}
+829-              animate={{ scale: 1, opacity: 1 }}
+830-              exit={{ scale: 0.9, opacity: 0 }}
+831-              className="w-full max-w-sm bg-white rounded-[2rem] p-8 space-y-6 shadow-2xl"
+832-            >
+833-              <div className="text-center">
+834-                <h3 className="text-xl font-bold text-slate-800">{t('terminal.modes.manual')}</h3>
+835-                <p className="text-slate-500 text-sm">{t('terminal.messages.enter_activity')}</p>
+836-              </div>
+837-              <input
+838-                type="text"
+839-                value={directInput}
+840-                onChange={(e) => setDirectInput(e.target.value)}
+841-                placeholder={t('terminal.messages.direct_input_placeholder')}
+842-                className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold text-lg"
+843-                autoFocus
+844-              />
+845-              <div className="flex gap-3">
+846-                <button
+847-                  onClick={() => setShowDirectInput(false)}
+848-                  className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold"
+849-                >
+850-                  {t('terminal.messages.cancel')}
+851-                </button>
+852-                <button
+853-                  onClick={() => {
+854-                    if (directInput.trim()) {
+855-                      const mode = directInput.trim();
+856-                      setCurrentCheckyMode(mode);
+857-                      setDirectInput('');
+858-                      setShowDirectInput(false);
+859-                      setShowModeSelector(false);
+860-                      if (pendingChildName) {
+861-                        triggerInstantCapture(pendingChildName, mode);
+862-                        setPendingChildName(null);
+863-                      }
+864-                    }
+865-                  }}
+866-                  className="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-bold shadow-lg shadow-orange-100"
+867-                >
+868-                  {t('terminal.messages.confirm')}
+869-                </button>
+870-              </div>
+871-            </motion.div>
+872-          </motion.div>
+873-        )}
+874-      </AnimatePresence>
+875-
+876-      {/* Power Saving Overlay */}
+877-      <AnimatePresence custom={touchPosition}>
+878-        {isPowerSaving && (
+879-          <motion.div
+880-            key="screensaver"
+881-            custom={touchPosition}
+882-            variants={screensaverVariants}
+883-            initial="initial"
+884-            animate="animate"
+885-            exit="exit"
+886-            onPointerDown={handleScreenInteraction}
+887-            className="fixed inset-0 bg-black z-[100] cursor-pointer overflow-hidden flex items-center justify-center"
+888-          >
+889-            <motion.div
+890-              animate={{
+891-                y: ["-35vh", "35vh", "-35vh"],
+892-                x: ["-35vw", "35vw", "-35vw"],
+893-              }}
+894-              transition={{
+895-                y: {
+896-                  duration: 15,
+897-                  repeat: Infinity,
+898-                  ease: "linear"
+899-                },
+900-                x: {
+901-                  duration: 23,
+902-                  repeat: Infinity,
+903-                  ease: "linear"
+904-                }
+905-              }}
+906-              className="absolute flex flex-col items-center gap-6 text-white/50"
+907-            >
+908-              <Check className="w-16 h-16 md:w-24 md:h-24 animate-pulse" />
+909-              <div className="text-3xl md:text-5xl font-bold tracking-widest text-center leading-relaxed">
+910-                {t('terminal.screensaver.touch_screen')}
+911-              </div>
+912-            </motion.div>
+913-          </motion.div>
+914-        )}
+915-      </AnimatePresence>
+916-
+917-      {/* Logout Confirm Popup */}
+918-      <AnimatePresence>
+919-        {isLogoutConfirmOpen && (
+920-          <motion.div
+921-            initial={{ opacity: 0 }}
+922-            animate={{ opacity: 1 }}
+923-            exit={{ opacity: 0 }}
+924-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+925-          >
+926-            <motion.div
+927-              initial={{ scale: 0.9, opacity: 0 }}
+928-              animate={{ scale: 1, opacity: 1 }}
+929-              exit={{ scale: 0.9, opacity: 0 }}
+930-              className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl"
+931-            >
+932-              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-4">
+933-                <LogOut className="w-8 h-8" />
+934-              </div>
+935-              <h3 className="text-xl font-bold text-slate-800 mb-2">{t('terminal.messages.logout_confirm_title')}</h3>
+936-              <p className="text-slate-500 mb-8 text-sm">{t('terminal.messages.logout_confirm_desc')}</p>
+937-              <div className="flex gap-3">
+938-                <button
+939-                  onClick={() => setIsLogoutConfirmOpen(false)}
+940-                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+941-                >
+942-                  {t('terminal.messages.cancel')}
+943-                </button>
+944-                <button
+945-                  onClick={confirmKioskLogout}
+946-                  className="flex-1 py-3 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-200"
+947-                >
+948-                  {t('terminal.messages.logout')}
+949-                </button>
+950-              </div>
+951-            </motion.div>
+952-          </motion.div>
+953-        )}
+954-      </AnimatePresence>
+955-
+956-      {/* Decorative Background */}
+957-      <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[-1]">
+958-        <div className="absolute top-[-10%] left-[-10%] w-[50%] aspect-square bg-orange-200/20 rounded-full blur-3xl" />
+959-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] aspect-square bg-orange-300/20 rounded-full blur-3xl" />
+960-      </div>
+961-    </div>
+962-  );
+963-}
+964-
+965-function SubscriptionView() {
+966-  const navigate = useNavigate();
+967-  const [isSubscribing, setIsSubscribing] = useState(false);
+968-  const [subscription, setSubscription] = useState<any>(null);
+969-  const [isLoading, setIsLoading] = useState(true);
+970-  const [isManaging, setIsManaging] = useState(false);
+971-  const [searchParams] = useSearchParams();
+972-  const isSuccess = searchParams.get('success') === 'true';
+973-
+974-  useEffect(() => {
+975-    const fetchSubscription = async () => {
