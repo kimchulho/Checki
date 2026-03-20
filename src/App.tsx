@@ -3053,6 +3053,14 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState('');
   const hasVerified = useRef(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -3065,8 +3073,6 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
     if (hasVerified.current) return;
     hasVerified.current = true;
 
-    let isMounted = true;
-
     const verifyToken = async () => {
       try {
         const response = await fetch('/api/kiosk/verify-token', {
@@ -3077,7 +3083,7 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
 
         const data = await response.json();
 
-        if (!isMounted) return;
+        if (!isMounted.current) return;
 
         if (!response.ok) {
           throw new Error(data.error || '인증에 실패했습니다.');
@@ -3097,10 +3103,10 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
         setStatus('success');
         
         setTimeout(() => {
-          if (isMounted) navigate('/kiosk');
+          if (isMounted.current) navigate('/kiosk');
         }, 2000);
       } catch (err: any) {
-        if (!isMounted) return;
+        if (!isMounted.current) return;
         setStatus('error');
         if (err.message === 'Invalid or expired token') {
           setError(t('terminal.messages.registration.invalid_qr'));
@@ -3111,10 +3117,6 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
     };
 
     verifyToken();
-
-    return () => {
-      isMounted = false;
-    };
   }, [searchParams, navigate, setKioskAuth, setKioskSchoolInfo, setTerminalName, t]);
 
   return (
