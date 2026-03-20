@@ -289,6 +289,64 @@ const PORT = Number(process.env.PORT) || 3000;
     }
   });
 
+  // Account Deletion Endpoint
+  app.post("/api/delete-account", async (req, res) => {
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return res.status(500).json({ error: "Server configuration error" });
+    }
+
+    try {
+      // Get place_id first
+      const { data: placeData, error: placeError } = await supabase
+        .from('checki_places')
+        .select('id')
+        .eq('user_id', user_id)
+        .single();
+
+      if (placeError && placeError.code !== 'PGRST116') {
+        throw placeError;
+      }
+
+      if (placeData) {
+        const placeId = placeData.id;
+
+        // Delete attendance records related to this place
+        await supabase.from('checki_attendance').delete().eq('place_id', placeId);
+        
+        // Delete terminals related to this place
+        await supabase.from('checki_terminals').delete().eq('place_id', placeId);
+        
+        // Delete students related to this place
+        await supabase.from('checki_students').delete().eq('place_id', placeId);
+
+        // Delete place info
+        const { error: dbError } = await supabase
+          .from('checki_places')
+          .delete()
+          .eq('id', placeId);
+
+        if (dbError) throw dbError;
+      }
+
+      // Delete auth user
+      const { error: authError } = await supabase.auth.admin.deleteUser(user_id);
+      
+      if (authError) throw authError;
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Account deletion error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Kiosk Registration Token Generation
   app.post("/api/kiosk/generate-token", async (req, res) => {
     const { placeId } = req.body;

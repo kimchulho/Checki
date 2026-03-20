@@ -16,6 +16,7 @@ import { SchoolRegistration } from './components/SchoolRegistration';
 import { AdminLogin } from './components/AdminLogin';
 import { ForgotPassword } from './components/ForgotPassword';
 import { ResetPassword } from './components/ResetPassword';
+import { AdminSettings } from './components/AdminSettings';
 
 export function LanguageSelector() {
   const { i18n } = useTranslation();
@@ -1952,13 +1953,13 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 <CreditCard className="w-5 h-5" />
               </Link>
 
-              <button 
-                onClick={() => setIsLogoutConfirmOpen(true)}
-                className="lg:hidden flex items-center gap-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-xl"
-                title={t('admin.buttons.logout')}
+              <Link 
+                to="/admin/settings"
+                className="lg:hidden flex items-center gap-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 transition-colors p-2 rounded-xl"
+                title={t('admin.buttons.settings')}
               >
-                <LogOut className="w-5 h-5" />
-              </button>
+                <Settings className="w-5 h-5" />
+              </Link>
             </div>
           </div>
           <div className="hidden lg:flex flex-wrap items-center gap-2 justify-end">
@@ -2059,14 +2060,14 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
               <span className="text-sm font-bold">{t('admin.buttons.subscription')}</span>
             </Link>
 
-            <button 
-              onClick={() => setIsLogoutConfirmOpen(true)}
-              className="flex items-center gap-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-xl"
-              title={t('admin.buttons.logout')}
+            <Link 
+              to="/admin/settings"
+              className="flex items-center gap-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 transition-colors p-2 rounded-xl"
+              title={t('admin.buttons.settings')}
             >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-bold">{t('admin.buttons.logout')}</span>
-            </button>
+              <Settings className="w-5 h-5" />
+              <span className="text-sm font-bold">{t('admin.buttons.settings')}</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -4321,6 +4322,11 @@ export default function App() {
             isLoadingAdmin={isLoadingAdmin} 
             fetchAttendance={fetchAttendance} 
           />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/settings" element={
+        <ProtectedRoute>
+          <AdminSettings />
         </ProtectedRoute>
       } />
       <Route path="/admin/subscription" element={
