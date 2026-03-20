@@ -39,8 +39,8 @@ const getSupabaseAdmin = () => {
 
 // VAPID keys should be generated once and kept secret.
 const vapidKeys = {
-  publicKey: (process.env.VAPID_PUBLIC_KEY || "BO2tJcYCs1Ak_5JXxkmKxN_D5XuaXsYNfqKvh7f2xe8joXYGTe1-B_v4P5tDOUZIOtOae6PrpQY2FaPOuv7UIC8").trim(),
-  privateKey: (process.env.VAPID_PRIVATE_KEY || "xYKtgsDRGrDyhrwfNdMtE_c6OsQzNxAJAaSqrhg1YwA").trim(),
+  publicKey: (process.env.VAPID_PUBLIC_KEY || "").trim(),
+  privateKey: (process.env.VAPID_PRIVATE_KEY || "").trim(),
 };
 
 if (vapidKeys.publicKey && vapidKeys.privateKey) {
