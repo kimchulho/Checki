@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, ArrowRight, ShieldCheck, Mail } from 'lucide-react';
+import { Lock, ArrowRight, ShieldCheck, Mail, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '../App';
@@ -9,7 +9,7 @@ import { supabase } from '../services/supabaseClient';
 export function AdminLogin() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +20,22 @@ export function AdminLogin() {
     setError('');
 
     try {
-      // 1. Sign in with Supabase Auth
+      // 1. Lookup email using username
+      const lookupResponse = await fetch('/api/lookup-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+
+      const lookupData = await lookupResponse.json();
+
+      if (!lookupResponse.ok) {
+        throw new Error(lookupData.error || t('auth.login_error'));
+      }
+
+      const email = lookupData.email;
+
+      // 2. Sign in with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -29,7 +44,7 @@ export function AdminLogin() {
       if (authError) throw authError;
       if (!authData.user) throw new Error(t('auth.login_error'));
 
-      // 2. Sync with backend to get place info
+      // 3. Sync with backend to get place info
       const response = await fetch('/api/login-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,16 +91,16 @@ export function AdminLogin() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                  {t('auth.email')}
+                  {t('auth.username')}
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
-                    type="email"
+                    type="text"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t('auth.email_placeholder')}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder={t('auth.username_placeholder')}
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold text-lg transition-all"
                     autoFocus
                   />

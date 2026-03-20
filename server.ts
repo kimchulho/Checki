@@ -196,10 +196,34 @@ const PORT = Number(process.env.PORT) || 3000;
   });
 
   // School Registration Endpoint
-  app.post("/api/register-school", async (req, res) => {
-    const { user_id, email, name, contact_phone, greeting_message, mode } = req.body;
+  app.post("/api/lookup-email", async (req, res) => {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "Username is required" });
 
-    if (!user_id || !name || !email) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return res.status(500).json({ error: "Server configuration error" });
+
+    try {
+      const { data, error } = await supabase
+        .from('checki_places')
+        .select('email')
+        .eq('username', username)
+        .single();
+
+      if (error || !data) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({ email: data.email });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/register-school", async (req, res) => {
+    const { user_id, username, email, name, contact_phone, mode } = req.body;
+
+    if (!user_id || !username || !name || !email) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -215,10 +239,10 @@ const PORT = Number(process.env.PORT) || 3000;
         .insert([
           {
             user_id,
+            username,
             email,
             name,
-            contact_phone,
-            greeting_message,
+            contact_phone: contact_phone || null,
             mode: mode || 'home'
           }
         ])

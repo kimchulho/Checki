@@ -9,11 +9,11 @@ export function SchoolRegistration() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    username: '',
     password: '',
     email: '',
     name: '',
     contact_phone: '',
-    greeting_message: '',
     mode: 'home' as 'home' | 'academy' | 'business'
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -125,6 +125,22 @@ export function SchoolRegistration() {
 
 
             <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.username')}</label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  required
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder={t('auth.username_placeholder')}
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -175,32 +191,16 @@ export function SchoolRegistration() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.phone')}</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.phone')} ({t('common.optional')})</label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  required
                   type="tel"
                   name="contact_phone"
                   value={formData.contact_phone}
                   onChange={handleChange}
                   placeholder={t('auth.phone_placeholder')}
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.greeting')}</label>
-              <div className="relative">
-                <MessageSquare className="absolute left-4 top-4 w-5 h-5 text-slate-400" />
-                <textarea
-                  name="greeting_message"
-                  value={formData.greeting_message}
-                  onChange={handleChange}
-                  placeholder={t('auth.greeting_placeholder')}
-                  rows={3}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all resize-none"
                 />
               </div>
             </div>
