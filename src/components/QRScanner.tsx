@@ -13,11 +13,16 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string>('');
-  const [isScanning, setIsScanning] = useState(true);
+  
+  const onScanRef = useRef(onScan);
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
     let requestAnimationFrameId: number;
+    let isComponentMounted = true;
 
     const startCamera = async () => {
       try {
@@ -25,7 +30,7 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
           video: { facingMode: 'environment' }
         });
         
-        if (videoRef.current) {
+        if (videoRef.current && isComponentMounted) {
           videoRef.current.srcObject = stream;
           videoRef.current.setAttribute('playsinline', 'true'); // required to tell iOS safari we don't want fullscreen
           videoRef.current.play();
@@ -33,12 +38,14 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
         }
       } catch (err) {
         console.error("Error accessing camera:", err);
-        setError(t('terminal.messages.camera_error') || '카메라에 접근할 수 없습니다.');
+        if (isComponentMounted) {
+          setError(t('terminal.messages.camera_error') || '카메라에 접근할 수 없습니다.');
+        }
       }
     };
 
     const tick = () => {
-      if (!isScanning) return;
+      if (!isComponentMounted) return;
       
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
         const canvasElement = canvasRef.current;
@@ -55,8 +62,8 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
           });
 
           if (code) {
-            setIsScanning(false);
-            onScan(code.data);
+            isComponentMounted = false;
+            onScanRef.current(code.data);
             return; // Stop scanning once found
           }
         }
@@ -67,7 +74,7 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
     startCamera();
 
     return () => {
-      setIsScanning(false);
+      isComponentMounted = false;
       if (requestAnimationFrameId) {
         cancelAnimationFrame(requestAnimationFrameId);
       }
@@ -75,7 +82,8 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [onScan, isScanning, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center">
