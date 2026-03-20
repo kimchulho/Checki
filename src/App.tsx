@@ -1460,6 +1460,32 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  useEffect(() => {
+    let intervalId: number;
+    if (kioskToken && placeInfo?.id) {
+      const initialCount = terminalsList.length;
+      intervalId = window.setInterval(async () => {
+        try {
+          const response = await fetch(`/api/terminals/${placeInfo.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.length > initialCount) {
+              setTerminalsList(data);
+              setKioskToken(null);
+              showNotification(t('admin.messages.register_success'));
+            }
+          }
+        } catch (error) {
+          console.error('Error polling terminals:', error);
+        }
+      }, 2000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kioskToken, placeInfo?.id, terminalsList.length, t]);
+
   const viewPhoto = async (item: any) => {
     if (!item.image_url) {
       showNotification(t('admin.messages.no_photo_data'), 'error');
@@ -2659,7 +2685,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       {isSaving ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        t('admin.buttons.save')
+                        t('admin.messages.save')
                       )}
                     </button>
                   </div>
@@ -2807,7 +2833,10 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setKioskToken(null)}
+              onClick={() => {
+                setKioskToken(null);
+                fetchTerminals();
+              }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
             <motion.div
@@ -2839,7 +2868,10 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
               </div>
 
               <button
-                onClick={() => setKioskToken(null)}
+                onClick={() => {
+                  setKioskToken(null);
+                  fetchTerminals();
+                }}
                 className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
               >
                 {t('admin.terminal_qr.close')}
