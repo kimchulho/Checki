@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Lock, ArrowRight, ShieldCheck, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '../App';
+import { supabase } from '../services/supabaseClient';
 
 export function AdminLogin() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,10 +20,20 @@ export function AdminLogin() {
     setError('');
 
     try {
-      const response = await fetch('/api/login-school', {
+      // 1. Sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error(t('auth.login_error'));
+
+      // 2. Sync with backend to get place info
+      const response = await fetch('/api/login-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, type: 'admin' }),
+        body: JSON.stringify({ user_id: authData.user.id }),
       });
 
       const data = await response.json();
@@ -35,6 +46,7 @@ export function AdminLogin() {
       localStorage.setItem('checki_admin_place_info', JSON.stringify(data.place));
       navigate('/admin');
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message || t('auth.login_error'));
     } finally {
       setIsLoading(false);
@@ -64,25 +76,38 @@ export function AdminLogin() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                  {t('auth.username')}
+                  {t('auth.email')}
                 </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder={t('auth.username_placeholder')}
-                  className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold text-lg transition-all"
-                  autoFocus
-                />
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('auth.email_placeholder')}
+                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold text-lg transition-all"
+                    autoFocus
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                  {t('auth.password')}
-                </label>
+                <div className="flex items-center justify-between mb-2 ml-1">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    {t('auth.password')}
+                  </label>
+                  <Link 
+                    to="/admin/forgot-password" 
+                    className="text-[10px] font-bold text-orange-500 hover:text-orange-600 transition-colors uppercase tracking-wider"
+                  >
+                    {t('auth.forgot_password')}
+                  </Link>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="password"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={t('auth.password_placeholder')}

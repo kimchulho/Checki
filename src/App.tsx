@@ -14,6 +14,8 @@ import { QRCodeCanvas } from 'qrcode.react';
 
 import { SchoolRegistration } from './components/SchoolRegistration';
 import { AdminLogin } from './components/AdminLogin';
+import { ForgotPassword } from './components/ForgotPassword';
+import { ResetPassword } from './components/ResetPassword';
 
 export function LanguageSelector() {
   const { i18n } = useTranslation();
@@ -4310,6 +4312,8 @@ export default function App() {
           />
       } />
       <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+      <Route path="/admin/reset-password" element={<ResetPassword />} />
       <Route path="/admin" element={
         <ProtectedRoute>
           <AdminView 

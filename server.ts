@@ -197,9 +197,9 @@ const PORT = Number(process.env.PORT) || 3000;
 
   // School Registration Endpoint
   app.post("/api/register-school", async (req, res) => {
-    const { username, password, email, name, contact_phone, greeting_message, mode } = req.body;
+    const { user_id, email, name, contact_phone, greeting_message, mode } = req.body;
 
-    if (!username || !password || !name || !email) {
+    if (!user_id || !name || !email) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -209,28 +209,12 @@ const PORT = Number(process.env.PORT) || 3000;
     }
 
     try {
-      // Check if username already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('checki_places')
-        .select('id')
-        .eq('username', username)
-        .single();
-
-      if (existingUser) {
-        return res.status(400).json({ error: "Username already exists" });
-      }
-
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const password_hash = await bcrypt.hash(password, salt);
-
-      // Insert new place
+      // Insert new place linked to Supabase Auth user_id
       const { data, error } = await supabase
         .from('checki_places')
         .insert([
           {
-            username,
-            password_hash,
+            user_id,
             email,
             name,
             contact_phone,
@@ -250,12 +234,12 @@ const PORT = Number(process.env.PORT) || 3000;
     }
   });
 
-  // School Login Endpoint
-  app.post("/api/login-school", async (req, res) => {
-    const { username, password } = req.body;
+  // School Login Sync Endpoint
+  app.post("/api/login-sync", async (req, res) => {
+    const { user_id } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ error: "Missing credentials" });
+    if (!user_id) {
+      return res.status(400).json({ error: "User ID is required" });
     }
 
     const supabase = getSupabaseAdmin();
@@ -267,26 +251,16 @@ const PORT = Number(process.env.PORT) || 3000;
       const { data: place, error } = await supabase
         .from('checki_places')
         .select('*')
-        .eq('username', username)
+        .eq('user_id', user_id)
         .single();
 
       if (error || !place) {
-        return res.status(401).json({ error: "Invalid username or password" });
+        return res.status(404).json({ error: "Place info not found" });
       }
 
-      // Admin login
-      const isMatch = await bcrypt.compare(password, place.password_hash);
-
-      if (!isMatch) {
-        return res.status(401).json({ error: "Invalid username or password" });
-      }
-
-      // Return place info (excluding passwords)
-      const { password_hash, kiosk_password_hash, ...placeInfo } = place;
-      
-      res.json({ success: true, place: placeInfo });
+      res.json({ success: true, place });
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Login sync error:", error);
       res.status(500).json({ error: error.message });
     }
   });
