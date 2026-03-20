@@ -323,8 +323,8 @@ const PORT = Number(process.env.PORT) || 3000;
         // Delete terminals related to this place
         await supabase.from('checki_terminals').delete().eq('place_id', placeId);
         
-        // Delete students related to this place
-        await supabase.from('checki_students').delete().eq('place_id', placeId);
+        // Delete members related to this place
+        await supabase.from('checki_members').delete().eq('place_id', placeId);
 
         // Delete place info
         const { error: dbError } = await supabase

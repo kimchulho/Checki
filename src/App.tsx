@@ -17,6 +17,7 @@ import { AdminLogin } from './components/AdminLogin';
 import { ForgotPassword } from './components/ForgotPassword';
 import { ResetPassword } from './components/ResetPassword';
 import { AdminSettings } from './components/AdminSettings';
+import { QRScanner } from './components/QRScanner';
 
 export function LanguageSelector() {
   const { i18n } = useTranslation();
@@ -317,6 +318,8 @@ function AttendanceView({
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [isScanningQR, setIsScanningQR] = useState(false);
+  const navigate = useNavigate();
   const [isStandalone, setIsStandalone] = useState(false);
   const [installGuideType, setInstallGuideType] = useState<'ios' | 'android' | 'other' | null>(null);
 
@@ -500,6 +503,30 @@ function AttendanceView({
   if (!kioskAuth) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        {isScanningQR && (
+          <QRScanner 
+            onClose={() => setIsScanningQR(false)}
+            onScan={(data) => {
+              setIsScanningQR(false);
+              try {
+                const url = new URL(data);
+                const token = url.searchParams.get('token');
+                if (token) {
+                  navigate(`/kiosk/setup?token=${token}`);
+                } else {
+                  alert(t('terminal.messages.registration.invalid_qr'));
+                }
+              } catch (e) {
+                // If it's not a valid URL, check if it's just a token
+                if (data && data.length > 10) {
+                  navigate(`/kiosk/setup?token=${data}`);
+                } else {
+                  alert(t('terminal.messages.registration.invalid_qr'));
+                }
+              }
+            }}
+          />
+        )}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -517,6 +544,13 @@ function AttendanceView({
             <div className="space-y-6">
               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 text-center">
                 <p className="text-slate-600 font-medium mb-4">{t('terminal.messages.scan_qr_desc')}</p>
+                <button
+                  onClick={() => setIsScanningQR(true)}
+                  className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-orange-200 transition-colors flex items-center justify-center gap-2 mb-4"
+                >
+                  <Camera className="w-5 h-5" />
+                  {t('terminal.messages.scan_qr_button') || 'QR 코드 스캔하기'}
+                </button>
                 <div className="flex items-center justify-center gap-2 text-orange-500 font-bold text-sm">
                   <Clock className="w-4 h-4" />
                   <span>{t('terminal.messages.qr_valid_time')}</span>
