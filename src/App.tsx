@@ -3052,6 +3052,7 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
   const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState('');
+  const hasVerified = useRef(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -3060,6 +3061,9 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
       setError('유효하지 않은 접근입니다.');
       return;
     }
+
+    if (hasVerified.current) return;
+    hasVerified.current = true;
 
     let isMounted = true;
 
