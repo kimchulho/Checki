@@ -593,14 +593,18 @@ const PORT = Number(process.env.PORT) || 3000;
   // Update Terminal
   app.put("/api/terminals/:terminalId", async (req, res) => {
     const { terminalId } = req.params;
-    const { name } = req.body;
+    const { name, activities } = req.body;
     const supabase = getSupabaseAdmin();
     if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
 
     try {
+      const updateData: any = { name };
+      if (activities !== undefined) {
+        updateData.activities = activities;
+      }
       const { error } = await supabase
         .from('checki_terminals')
-        .update({ name })
+        .update(updateData)
         .eq('id', terminalId);
 
       if (error) throw error;
@@ -647,14 +651,14 @@ const PORT = Number(process.env.PORT) || 3000;
     try {
       const { data, error } = await supabase
         .from('checki_terminals')
-        .select('id, name')
+        .select('id, name, activities')
         .eq('id', terminalId)
         .single();
 
       if (error || !data) {
         return res.status(404).json({ error: "Terminal not found" });
       }
-      res.json({ status: "active", name: data.name });
+      res.json({ status: "active", name: data.name, activities: data.activities });
     } catch (error: any) {
       res.status(404).json({ error: "Terminal not found" });
     }

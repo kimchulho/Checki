@@ -303,6 +303,7 @@ function AttendanceView({
   kioskAuth, setKioskAuth, kioskSchoolInfo, setKioskSchoolInfo,
   getModeOptions,
   terminalName,
+  terminalActivities,
   facingMode, setFacingMode,
   restartCamera
 }: any) {
@@ -319,7 +320,20 @@ function AttendanceView({
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isScanningQR, setIsScanningQR] = useState(false);
+  const [selectedActivityToConfirm, setSelectedActivityToConfirm] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const handleActivitySelect = (activity: string) => {
+    setSelectedActivityToConfirm(activity);
+  };
+
+  const confirmActivity = () => {
+    if (pendingChildName && selectedActivityToConfirm) {
+      triggerInstantCapture(pendingChildName, selectedActivityToConfirm);
+      setPendingChildName(null);
+      setSelectedActivityToConfirm(null);
+    }
+  };
   const [isStandalone, setIsStandalone] = useState(false);
   const [installGuideType, setInstallGuideType] = useState<'ios' | 'android' | 'other' | null>(null);
 
@@ -482,7 +496,6 @@ function AttendanceView({
   const handleChildClick = (childName: string) => {
     if (isProcessing) return;
     setPendingChildName(childName);
-    setShowModeSelector(true);
   };
 
   const screensaverVariants = {
@@ -735,6 +748,30 @@ function AttendanceView({
                 <p className="text-sm font-medium">{t('terminal.messages.no_members')}</p>
                 <p className="text-[10px]">{t('terminal.messages.register_in_admin')}</p>
               </div>
+            ) : pendingChildName ? (
+              <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
+                <button
+                  onClick={() => setPendingChildName(null)}
+                  className="flex-shrink-0 w-[calc((100%-1.5rem)/3)] h-32 bg-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-slate-200 hover:bg-slate-200 active:scale-95 transition-all snap-center"
+                >
+                  <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+                    <ArrowLeft className="w-5 h-5 text-slate-500" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600">뒤로</span>
+                </button>
+                {terminalActivities.map((activity: string, index: number) => (
+                  <button
+                    key={index}
+                    onClick={() => handleActivitySelect(activity)}
+                    className="flex-shrink-0 w-[calc((100%-1.5rem)/3)] h-32 bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center"
+                  >
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                      <Check className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <span className="text-lg font-black text-slate-700 truncate w-full text-center">{activity}</span>
+                  </button>
+                ))}
+              </div>
             ) : (
               <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
                 {childrenList.map((child) => {
@@ -764,6 +801,41 @@ function AttendanceView({
           </div>
         </div>
       </main>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {selectedActivityToConfirm && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-sm bg-white/90 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/50 pointer-events-auto text-center"
+            >
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                {pendingChildName}
+              </h3>
+              <p className="text-lg text-slate-600 mb-6">
+                <span className="font-bold text-orange-500">{selectedActivityToConfirm}</span> 활동을 기록할까요?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedActivityToConfirm(null)}
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={confirmActivity}
+                  className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors"
+                >
+                  확인
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Install Guide Modal */}
       <AnimatePresence>
@@ -829,7 +901,7 @@ function AttendanceView({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 z-[60] flex items-end justify-center p-4"
+            className="fixed inset-0 z-[60] flex items-end justify-center p-4 pointer-events-none"
             onClick={() => {
               setShowModeSelector(false);
               setPendingChildName(null);
@@ -839,7 +911,7 @@ function AttendanceView({
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="w-full max-w-md bg-white rounded-t-[2.5rem] p-8 space-y-6"
+              className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-t-[2.5rem] p-8 space-y-6 border border-white/50 pointer-events-auto"
               onClick={e => e.stopPropagation()}
             >
               <div className="text-center">
@@ -882,13 +954,13 @@ function AttendanceView({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-sm bg-white rounded-[2rem] p-8 space-y-6 shadow-2xl"
+              className="w-full max-w-sm bg-white/90 backdrop-blur-md rounded-[2rem] p-8 space-y-6 shadow-2xl border border-white/50 pointer-events-auto"
             >
               <div className="text-center">
                 <h3 className="text-xl font-bold text-slate-800">{t('terminal.modes.manual')}</h3>
@@ -981,13 +1053,13 @@ function AttendanceView({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 pointer-events-none"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl"
+              className="bg-white/90 backdrop-blur-md rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl border border-white/50 pointer-events-auto"
             >
               <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <LogOut className="w-8 h-8" />
@@ -1816,7 +1888,10 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name: editingTerminal.name })
+        body: JSON.stringify({ 
+          name: editingTerminal.name,
+          activities: Array.isArray(editingTerminal.activities) ? editingTerminal.activities.filter(Boolean) : ['집', '학교', '외출']
+        })
       });
       
       if (!response.ok) {
@@ -2636,6 +2711,18 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       onChange={(e) => setEditingTerminal({...editingTerminal, name: e.target.value})}
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">활동 목록 (쉼표로 구분)</label>
+                    <input 
+                      type="text"
+                      placeholder="집, 학교, 외출"
+                      value={Array.isArray(editingTerminal.activities) ? editingTerminal.activities.join(', ') : '집, 학교, 외출'}
+                      onChange={(e) => setEditingTerminal({...editingTerminal, activities: e.target.value.split(',').map(s => s.trim())})}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
+                    />
+                    <p className="text-xs text-slate-400 mt-2 ml-2">단말기에서 선택할 수 있는 활동들을 쉼표로 구분하여 입력하세요.</p>
                   </div>
 
                   <div className="space-y-3">
@@ -3940,6 +4027,7 @@ export default function App() {
   const [kioskAuth, setKioskAuth] = useState(false);
   const [kioskSchoolInfo, setKioskSchoolInfo] = useState<any>(null);
   const [terminalName, setTerminalName] = useState<string>('');
+  const [terminalActivities, setTerminalActivities] = useState<string[]>(['집', '학교', '외출']);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   const getModeOptions = () => {
@@ -4041,6 +4129,9 @@ export default function App() {
         if (data.name) {
           setTerminalName(data.name);
           localStorage.setItem('checki_terminal_name', data.name);
+        }
+        if (data.activities && Array.isArray(data.activities)) {
+          setTerminalActivities(data.activities);
         }
         
         return true;
@@ -4393,6 +4484,7 @@ export default function App() {
             setKioskSchoolInfo={setKioskSchoolInfo}
             getModeOptions={getModeOptions}
             terminalName={terminalName}
+            terminalActivities={terminalActivities}
             facingMode={facingMode}
             setFacingMode={setFacingMode}
             restartCamera={startCamera}
