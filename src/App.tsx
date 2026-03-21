@@ -752,7 +752,7 @@ function AttendanceView({
               <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
                 <button
                   onClick={() => setPendingChildName(null)}
-                  className="flex-shrink-0 w-[calc((100%-1.5rem)/3)] h-32 bg-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-slate-200 hover:bg-slate-200 active:scale-95 transition-all snap-center"
+                  className="flex-shrink-0 w-28 md:w-36 h-32 bg-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-slate-200 hover:bg-slate-200 active:scale-95 transition-all snap-center"
                 >
                   <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
                     <ArrowLeft className="w-5 h-5 text-slate-500" />
@@ -763,12 +763,12 @@ function AttendanceView({
                   <button
                     key={index}
                     onClick={() => handleActivitySelect(activity)}
-                    className="flex-shrink-0 w-[calc((100%-1.5rem)/3)] h-32 bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center"
+                    className="flex-shrink-0 w-32 md:w-36 h-32 bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center"
                   >
-                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors shrink-0">
                       <Check className="w-5 h-5 text-orange-500" />
                     </div>
-                    <span className="text-lg font-black text-slate-700 truncate w-full text-center">{activity}</span>
+                    <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-keep w-full text-center">{activity}</span>
                   </button>
                 ))}
               </div>
@@ -781,18 +781,18 @@ function AttendanceView({
                   } else if (childrenList.length === 2) {
                     buttonWidthClass = 'w-[calc(50%-0.375rem)]';
                   } else {
-                    buttonWidthClass = 'w-[calc((100%-1.5rem)/3)]';
+                    buttonWidthClass = 'w-32 md:w-36';
                   }
                   return (
                     <button
                       key={child.id}
                       onClick={() => handleChildClick(child.name)}
-                      className={`flex-shrink-0 h-32 bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center ${buttonWidthClass}`}
+                      className={`flex-shrink-0 h-32 bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center ${buttonWidthClass}`}
                     >
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors shrink-0">
                         <User className="w-5 h-5 text-orange-500" />
                       </div>
-                      <span className="text-lg font-black text-slate-700 truncate w-full text-center">{child.name}</span>
+                      <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-keep w-full text-center">{child.name}</span>
                     </button>
                   );
                 })}
