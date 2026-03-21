@@ -766,10 +766,8 @@ function AttendanceView({
                       buttonWidthClass = 'w-full';
                     } else if (childrenList.length === 2) {
                       buttonWidthClass = 'w-[calc(50%-0.375rem)]';
-                    } else if (childrenList.length === 3) {
-                      buttonWidthClass = 'w-[calc(33.333%-0.5rem)]';
                     } else {
-                      buttonWidthClass = 'w-32 md:w-36';
+                      buttonWidthClass = 'w-[calc(33.333%-0.5rem)]';
                     }
                     const isSelected = pendingChildName === child.name;
                     return (
@@ -810,10 +808,8 @@ function AttendanceView({
                             activityWidthClass = 'w-full';
                           } else if (terminalActivities.length === 2) {
                             activityWidthClass = 'w-[calc(50%-0.375rem)]';
-                          } else if (terminalActivities.length === 3) {
-                            activityWidthClass = 'w-[calc(33.333%-0.5rem)]';
                           } else {
-                            activityWidthClass = 'w-32 md:w-36';
+                            activityWidthClass = 'w-[calc(33.333%-0.5rem)]';
                           }
                           const isSelected = selectedActivityToConfirm === activity;
                           return (
