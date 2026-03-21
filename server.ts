@@ -87,12 +87,32 @@ const PORT = Number(process.env.PORT) || 3000;
 
     try {
       // 1. Fetch member info to verify they exist and get their place_id
-      const { data: member, error: memberError } = await supabase
+      let member: any = null;
+      let memberError: any = null;
+
+      const { data: homeMember, error: homeError } = await supabase
         .from('checki_members')
         .select('id, name, place_id')
         .eq('name', childName)
         .eq('place_id', placeId)
         .single();
+
+      if (homeMember) {
+        member = homeMember;
+      } else {
+        const { data: eduMember, error: eduError } = await supabase
+          .from('checki_edu_members')
+          .select('id, name, place_id, home_member_id')
+          .eq('name', childName)
+          .eq('place_id', placeId)
+          .single();
+        
+        if (eduMember) {
+          member = eduMember;
+        } else {
+          memberError = eduError || homeError;
+        }
+      }
 
       if (memberError || !member) {
         console.warn(`Member not found for notification: ${childName} at place ${placeId}`);
@@ -107,10 +127,14 @@ const PORT = Number(process.env.PORT) || 3000;
         .select('subscription')
         .eq('place_id', targetPlaceId);
 
+      // Parent subscriptions can be linked to member.id or member.home_member_id
+      const memberIds = [member.id];
+      if (member.home_member_id) memberIds.push(member.home_member_id);
+
       const { data: parentSubscriptions, error: parentSubError } = await supabase
         .from('checki_push_subscriptions')
         .select('subscription, phone_number')
-        .eq('member_code', member.id);
+        .in('member_code', memberIds);
 
       if (adminSubError) throw adminSubError;
       if (parentSubError) throw parentSubError;
@@ -325,6 +349,7 @@ const PORT = Number(process.env.PORT) || 3000;
         
         // Delete members related to this place
         await supabase.from('checki_members').delete().eq('place_id', placeId);
+        await supabase.from('checki_edu_members').delete().eq('place_id', placeId);
 
         // Delete place info
         const { error: dbError } = await supabase
@@ -472,22 +497,35 @@ const PORT = Number(process.env.PORT) || 3000;
   // Update Student
   app.put("/api/students/:studentId", async (req, res) => {
     const { studentId } = req.params;
-    const { placeId, name } = req.body;
+    const { placeId, name, isEdu, birth_date, class_name, parent_contact, member_code } = req.body;
     const supabase = getSupabaseAdmin() || getSupabase();
     if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
+
+    const targetTable = isEdu ? 'checki_edu_members' : 'checki_members';
 
     try {
       // 1. Fetch old student name to update history
       const { data: oldStudent } = await supabase
-        .from('checki_members')
+        .from(targetTable)
         .select('name')
         .eq('id', studentId)
         .single();
 
       // 2. Update the student record
+      let updateData: any = { name };
+      if (isEdu) {
+        updateData = {
+          ...updateData,
+          birth_date: birth_date || null,
+          class_name: class_name || null,
+          parent_contact: parent_contact || null,
+          member_code: member_code || null
+        };
+      }
+
       let query = supabase
-        .from('checki_members')
-        .update({ name })
+        .from(targetTable)
+        .update(updateData)
         .eq('id', studentId);
         
       if (placeId) {
@@ -512,17 +550,144 @@ const PORT = Number(process.env.PORT) || 3000;
     }
   });
 
-  // Delete Student
-  app.delete("/api/students/:studentId", async (req, res) => {
+  // Generate Invite Code
+  app.post("/api/students/:studentId/invite", async (req, res) => {
     const { studentId } = req.params;
     const { placeId } = req.query;
     const supabase = getSupabaseAdmin() || getSupabase();
     if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
 
     try {
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const { error } = await supabase
+        .from('checki_edu_members')
+        .update({ invite_code: code })
+        .eq('id', studentId)
+        .eq('place_id', placeId as string);
+
+      if (error) throw error;
+      res.json({ success: true, invite_code: code });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Link Home Student to Edu Student
+  app.post("/api/students/:studentId/link", async (req, res) => {
+    const { studentId } = req.params;
+    const { invite_code } = req.body;
+    const supabase = getSupabaseAdmin() || getSupabase();
+    if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
+
+    try {
+      // 1. Find the edu student with the given invite code
+      const { data: eduStudent, error: findError } = await supabase
+        .from('checki_edu_members')
+        .select('id')
+        .eq('invite_code', invite_code)
+        .single();
+
+      if (findError || !eduStudent) {
+        return res.status(400).json({ error: "유효하지 않은 초대 코드입니다." });
+      }
+
+      // 2. Link the home student to the edu student
+      const { error: updateError } = await supabase
+        .from('checki_edu_members')
+        .update({ home_member_id: studentId })
+        .eq('id', eduStudent.id);
+
+      if (updateError) throw updateError;
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Guest Attendance Lookup
+  app.get("/api/guest/attendance", async (req, res) => {
+    const { name, contact } = req.query;
+    if (!name || !contact) return res.status(400).json({ error: "이름과 연락처가 필요합니다." });
+
+    const supabase = getSupabaseAdmin() || getSupabase();
+    if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
+
+    try {
+      // 1. Find the edu student
+      const { data: students, error: findError } = await supabase
+        .from('checki_edu_members')
+        .select('id, place_id')
+        .eq('name', name as string)
+        .eq('parent_contact', contact as string);
+
+      if (findError || !students || students.length === 0) {
+        return res.status(404).json({ error: "일치하는 원생 정보가 없습니다." });
+      }
+
+      // 2. Get attendance for all matching students (in case of multiple academies)
+      const childIds = students.map(s => s.id);
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: attendance, error: attError } = await supabase
+        .from('checki_history')
+        .select(`
+          id,
+          timestamp,
+          activity_type,
+          child_id,
+          place_id
+        `)
+        .in('child_id', childIds)
+        .gte('timestamp', thirtyDaysAgo.toISOString())
+        .order('timestamp', { ascending: false });
+
+      if (attError) throw attError;
+
+      // Fetch place names separately
+      const placeIds = [...new Set((attendance || []).map(a => a.place_id).filter(Boolean))];
+      let placeMap: Record<string, string> = {};
+      
+      if (placeIds.length > 0) {
+        const { data: places } = await supabase
+          .from('checki_places')
+          .select('id, name')
+          .in('id', placeIds);
+          
+        if (places) {
+          placeMap = places.reduce((acc, p) => ({ ...acc, [p.id]: p.name }), {});
+        }
+      }
+
+      const attendanceWithPlaces = (attendance || []).map(a => ({
+        ...a,
+        place: a.place_id ? { name: placeMap[a.place_id] || '학원' } : null
+      }));
+
+      res.json({ 
+        attendance: attendanceWithPlaces,
+        studentName: name
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete Student
+  app.delete("/api/students/:studentId", async (req, res) => {
+    const { studentId } = req.params;
+    const { placeId, isEdu } = req.query;
+    const supabase = getSupabaseAdmin() || getSupabase();
+    if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
+
+    const targetTable = isEdu === 'true' ? 'checki_edu_members' : 'checki_members';
+
+    try {
       // 0. Fetch student name to delete history
       const { data: student } = await supabase
-        .from('checki_members')
+        .from(targetTable)
         .select('name')
         .eq('id', studentId)
         .single();
@@ -554,7 +719,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       // 3. Delete the student record
       let query = supabase
-        .from('checki_members')
+        .from(targetTable)
         .delete()
         .eq('id', studentId);
         

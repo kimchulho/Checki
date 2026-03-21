@@ -108,7 +108,7 @@ export function SchoolRegistration() {
                   <button
                     key={m}
                     type="button"
-                    disabled={m !== 'home'}
+                    disabled={m === 'business'}
                     onClick={() => setFormData(prev => ({ ...prev, mode: m }))}
                     className={`py-3 rounded-2xl text-sm font-bold transition-all border ${
                       formData.mode === m 

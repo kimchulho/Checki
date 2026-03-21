@@ -132,6 +132,7 @@ function LandingPage() {
             <Link to="/admin" className="bg-slate-800 text-white px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-slate-700 transition-all shadow-md whitespace-nowrap">{t('landing.go_admin')}</Link>
           ) : (
             <>
+              <Link to="/guest" className="text-xs md:text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">{t('landing.guest_lookup')}</Link>
               <Link to="/admin/login" className="text-xs md:text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">{t('landing.login')}</Link>
               <Link to="/register" className="bg-slate-800 text-white px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-slate-700 transition-all shadow-md whitespace-nowrap">{t('landing.start_free')}</Link>
             </>
@@ -282,6 +283,8 @@ function LandingPage() {
   );
 }
 
+import GuestView from './components/GuestView';
+
 const isIos = () => {
   const userAgent = window.navigator.userAgent.toLowerCase();
   return /iphone|ipad|ipod/.test(userAgent);
@@ -419,7 +422,7 @@ function AttendanceView({
     setIsLoadingChildren(true);
     try {
       const { data, error } = await supabase
-        .from('checki_members')
+        .from(kioskSchoolInfo?.type === 'academy' ? 'checki_edu_members' : 'checki_members')
         .select('*')
         .eq('place_id', kioskSchoolInfo.id)
         .order('name', { ascending: true });
@@ -1017,7 +1020,7 @@ function AttendanceView({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] flex items-start justify-center p-4 pt-24 sm:items-center sm:pt-4 pointer-events-none"
+            className="fixed inset-0 z-[70] flex items-start justify-center p-4 pt-8 sm:items-center sm:pt-4 pointer-events-none"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -1435,7 +1438,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
   const [editingStudent, setEditingStudent] = useState<any | null>(null);
   const [editingTerminal, setEditingTerminal] = useState<any | null>(null);
   const [newStudent, setNewStudent] = useState({
-    name: ''
+    name: '',
+    birth_date: '',
+    class_name: '',
+    parent_contact: '',
+    member_code: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<{ id: string; url: string; name: string; time: string; imagePath: string } | null>(null);
@@ -1732,7 +1739,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
       // 1. Fetch students
       let query = supabase
-        .from('checki_members')
+        .from(placeInfo?.type === 'academy' ? 'checki_edu_members' : 'checki_members')
         .select('*')
         .order('name', { ascending: true });
 
@@ -1745,24 +1752,48 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
       // 2. Fetch latest history for each student to show "Recent Activity"
       let history: any[] = [];
+      let eduToHomeMap: Record<string, string> = {};
       try {
-        if (placeId) {
-          const { data: historyData, error: historyError } = await supabase
-            .from('checki_history')
-            .select('child_name, child_id, timestamp')
-            .eq('place_id', placeId)
-            .order('timestamp', { ascending: false });
+        let historyQuery = supabase
+          .from('checki_history')
+          .select('child_name, child_id, timestamp')
+          .order('timestamp', { ascending: false });
+
+        if (placeInfo?.type === 'home' && students && students.length > 0) {
+          const homeMemberIds = students.map(s => s.id);
+          const { data: linkedEduMembers } = await supabase
+            .from('checki_edu_members')
+            .select('id, home_member_id')
+            .in('home_member_id', homeMemberIds);
           
-          if (!historyError) {
-            history = historyData || [];
+          if (linkedEduMembers && linkedEduMembers.length > 0) {
+            const eduMemberIds = linkedEduMembers.map(s => {
+              if (s.home_member_id) eduToHomeMap[s.id] = s.home_member_id;
+              return s.id;
+            });
+            historyQuery = historyQuery.or(`place_id.eq.${placeId},child_id.in.(${eduMemberIds.join(',')})`);
+          } else if (placeId) {
+            historyQuery = historyQuery.eq('place_id', placeId);
           }
+        } else if (placeId) {
+          historyQuery = historyQuery.eq('place_id', placeId);
+        }
+
+        const { data: historyData, error: historyError } = await historyQuery;
+        
+        if (!historyError) {
+          history = historyData || [];
         }
       } catch (e) {
         console.warn('Failed to fetch history for students list:', e);
       }
 
       const mappedStudents = (students || []).map(student => {
-        const lastActivity = history.find(h => h.child_id === student.id || h.child_name === student.name);
+        const lastActivity = history.find(h => 
+          h.child_id === student.id || 
+          h.child_name === student.name || 
+          (h.child_id && eduToHomeMap[h.child_id] === student.id)
+        );
         return {
           ...student,
           last_activity_at: lastActivity ? lastActivity.timestamp : null
@@ -1865,9 +1896,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         throw new Error(t('admin.messages.no_place_info'));
       }
 
+      const targetTable = placeInfo?.type === 'academy' ? 'checki_edu_members' : 'checki_members';
+
       // Check if name already exists for this school
       const { data: existing, error: checkError } = await supabase
-        .from('checki_members')
+        .from(targetTable)
         .select('name')
         .eq('name', newStudent.name)
         .eq('place_id', placeId)
@@ -1877,13 +1910,23 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         throw new Error(t('admin.messages.already_registered_name'));
       }
 
-      const memberData = {
+      let memberData: any = {
         name: newStudent.name,
         place_id: placeId
       };
 
+      if (placeInfo?.type === 'academy') {
+        memberData = {
+          ...memberData,
+          birth_date: newStudent.birth_date || null,
+          class_name: newStudent.class_name || null,
+          parent_contact: newStudent.parent_contact || null,
+          member_code: newStudent.member_code || null
+        };
+      }
+
       const { error } = await supabase
-        .from('checki_members')
+        .from(targetTable)
         .insert([memberData]);
       
       if (error) throw error;
@@ -1916,7 +1959,12 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           placeId,
-          name: editingStudent.name
+          name: editingStudent.name,
+          isEdu: placeInfo?.type === 'academy',
+          birth_date: editingStudent.birth_date || null,
+          class_name: editingStudent.class_name || null,
+          parent_contact: editingStudent.parent_contact || null,
+          member_code: editingStudent.member_code || null
         })
       });
 
@@ -1986,7 +2034,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/students/${studentId}?placeId=${placeInfo.id}`, {
+      const response = await fetch(`/api/students/${studentId}?placeId=${placeInfo.id}&isEdu=${placeInfo.type === 'academy'}`, {
         method: 'DELETE'
       });
       
@@ -2636,6 +2684,46 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
                     />
                   </div>
+                  {placeInfo?.type === 'academy' && (
+                    <>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="생년월일 (예: 20150101)"
+                          value={newStudent.birth_date}
+                          onChange={e => setNewStudent({...newStudent, birth_date: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="수강반"
+                          value={newStudent.class_name}
+                          onChange={e => setNewStudent({...newStudent, class_name: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="학부모 연락처 (예: 010-1234-5678)"
+                          value={newStudent.parent_contact}
+                          onChange={e => setNewStudent({...newStudent, parent_contact: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="출석번호"
+                          value={newStudent.member_code}
+                          onChange={e => setNewStudent({...newStudent, member_code: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   <button 
                     type="submit"
@@ -2692,6 +2780,111 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                     />
                   </div>
+                  {placeInfo?.type === 'academy' && (
+                    <>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="생년월일 (예: 20150101)"
+                          value={editingStudent.birth_date || ''}
+                          onChange={e => setEditingStudent({...editingStudent, birth_date: e.target.value})}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="수강반"
+                          value={editingStudent.class_name || ''}
+                          onChange={e => setEditingStudent({...editingStudent, class_name: e.target.value})}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="학부모 연락처 (예: 010-1234-5678)"
+                          value={editingStudent.parent_contact || ''}
+                          onChange={e => setEditingStudent({...editingStudent, parent_contact: e.target.value})}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="출석번호"
+                          value={editingStudent.member_code || ''}
+                          onChange={e => setEditingStudent({...editingStudent, member_code: e.target.value})}
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
+                        />
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-600">초대 코드</span>
+                          <span className="text-sm text-slate-500">{editingStudent.invite_code || '없음'}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/students/${editingStudent.id}/invite?placeId=${placeInfo.id}`, { method: 'POST' });
+                              if (res.ok) {
+                                const data = await res.json();
+                                setEditingStudent({...editingStudent, invite_code: data.invite_code});
+                                showNotification('초대 코드가 생성되었습니다.');
+                              }
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }}
+                          className="w-full py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm hover:bg-blue-100"
+                        >
+                          초대 코드 생성/재발급
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {placeInfo?.type === 'home' && (
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-bold text-slate-600">체키 에듀(학원) 연결</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="초대 코드 입력"
+                          value={editingStudent.input_invite_code || ''}
+                          onChange={e => setEditingStudent({...editingStudent, input_invite_code: e.target.value})}
+                          className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 text-sm font-bold text-slate-700"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!editingStudent.input_invite_code) return;
+                            try {
+                              const res = await fetch(`/api/students/${editingStudent.id}/link`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ invite_code: editingStudent.input_invite_code })
+                              });
+                              if (res.ok) {
+                                showNotification('학원과 성공적으로 연결되었습니다.');
+                                setEditingStudent({...editingStudent, input_invite_code: ''});
+                              } else {
+                                const data = await res.json();
+                                showNotification(data.error || '연결에 실패했습니다.', 'error');
+                              }
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }}
+                          className="px-4 py-2 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600"
+                        >
+                          연결
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                     <div className="flex items-center justify-between">
@@ -3376,8 +3569,9 @@ function HistoryView() {
     setIsSearched(false);
     try {
       // 1. Verify student and parent contact
+      const targetTable = placeInfo?.type === 'academy' ? 'checki_edu_members' : 'checki_members';
       const { data: memberData, error: memberError } = await supabase
-        .from('checki_members')
+        .from(targetTable)
         .select('*')
         .eq('member_code', id)
         .eq('place_id', targetPlaceId)
@@ -3394,7 +3588,7 @@ function HistoryView() {
       }
 
       // Simple verification
-      const storedContact = memberData.contact_number.replace(/[^0-9]/g, '');
+      const storedContact = (memberData.contact_number || memberData.parent_contact || '').replace(/[^0-9]/g, '');
       const inputContact = contact.replace(/[^0-9]/g, '');
 
       if (!storedContact.includes(inputContact) || inputContact.length < 4) {
@@ -3413,7 +3607,7 @@ function HistoryView() {
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('checki_history')
         .select('*')
-        .eq('member_code', id)
+        .eq('child_id', memberData.id)
         .eq('place_id', targetPlaceId)
         .order('timestamp', { ascending: false });
 
@@ -3582,7 +3776,7 @@ function HistoryView() {
       const { data: existing } = await supabase
         .from('checki_push_subscriptions')
         .select('id')
-        .eq('member_code', memberCode)
+        .eq('member_code', studentInfo.id)
         .contains('subscription', { endpoint: subscription.endpoint })
         .single();
 
@@ -3590,7 +3784,7 @@ function HistoryView() {
         const { error } = await supabase
           .from('checki_push_subscriptions')
           .insert({
-            member_code: memberCode,
+            member_code: studentInfo.id,
             phone_number: parentContact,
             subscription: subscription.toJSON(),
           });
@@ -3629,7 +3823,7 @@ function HistoryView() {
         const { error } = await supabase
           .from('checki_push_subscriptions')
           .delete()
-          .or(`phone_number.eq.${parentContact},member_code.eq.${memberCode}`)
+          .or(`phone_number.eq.${parentContact},member_code.eq.${studentInfo.id}`)
           .contains('subscription', { endpoint: subscription.endpoint });
           
         if (error) console.warn('DB deletion warning:', error);
@@ -4298,7 +4492,7 @@ export default function App() {
 
       // 2. Fetch all students to join manually (more robust if foreign keys aren't set)
       let studentsQuery = supabase
-        .from('checki_members')
+        .from(placeInfo?.type === 'academy' ? 'checki_edu_members' : 'checki_members')
         .select('*');
 
       if (placeId) {
@@ -4309,6 +4503,34 @@ export default function App() {
       
       if (studentsError) throw studentsError;
 
+      let allAttendanceData = [...(attendanceData || [])];
+      let allStudentsData = [...(studentsData || [])];
+
+      // If home mode, fetch linked edu members and their attendance
+      if (placeInfo?.type === 'home' && studentsData && studentsData.length > 0) {
+        const homeMemberIds = studentsData.map(s => s.id);
+        const { data: linkedEduMembers } = await supabase
+          .from('checki_edu_members')
+          .select('id, name, place_id, class_name')
+          .in('home_member_id', homeMemberIds);
+
+        if (linkedEduMembers && linkedEduMembers.length > 0) {
+          allStudentsData = [...allStudentsData, ...linkedEduMembers];
+          const eduMemberIds = linkedEduMembers.map(s => s.id);
+          const { data: eduAttendance } = await supabase
+            .from('checki_history')
+            .select('*')
+            .in('child_id', eduMemberIds)
+            .order('timestamp', { ascending: false });
+
+          if (eduAttendance) {
+            allAttendanceData = [...allAttendanceData, ...eduAttendance];
+            // Sort combined attendance
+            allAttendanceData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          }
+        }
+      }
+
       // 3. Fetch all terminals to join manually (remove place_id filter to be more robust for joining)
       const { data: terminalsData, error: terminalsError } = await supabase
         .from('checki_terminals')
@@ -4317,14 +4539,14 @@ export default function App() {
       if (terminalsError) throw terminalsError;
 
       // 4. Map students and terminals to attendance
-      const mappedData = (attendanceData || []).map(record => {
+      const mappedData = allAttendanceData.map(record => {
         const recordTerminalId = String(record.terminal_id || record.terminalId || '').toLowerCase();
         const terminal = (terminalsData || []).find(t => {
           const terminalId = String(t.id || '').toLowerCase();
           return terminalId === recordTerminalId && recordTerminalId !== '';
         });
         
-        const student = (studentsData || []).find(s => {
+        const student = allStudentsData.find(s => {
           if (record.child_id && s.id === record.child_id) return true;
           return String(s.name).toLowerCase() === String(record.child_name).toLowerCase();
         });
@@ -4359,6 +4581,9 @@ export default function App() {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       idleTimerRef.current = setTimeout(() => {
         setIsPowerSaving(true);
+        setPendingChildName(null);
+        setShowDirectInput(false);
+        setDirectInput('');
       }, 60000);
     };
 
@@ -4463,7 +4688,7 @@ export default function App() {
       let childId: string | undefined;
       try {
         const { data } = await supabase
-          .from('checki_members')
+          .from(kioskSchoolInfo?.type === 'academy' ? 'checki_edu_members' : 'checki_members')
           .select('id')
           .eq('name', childName)
           .eq('place_id', kioskSchoolInfo?.id)
@@ -4538,6 +4763,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/guest" element={<GuestView />} />
       <Route path="/kiosk" element={
           <AttendanceView 
             view={view} setView={setView} 
