@@ -1883,6 +1883,14 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     
     setIsSaving(true);
     try {
+      let finalActivities = ['집', '학교', '외출'];
+      if (typeof editingTerminal.activitiesInput === 'string') {
+        const parsed = editingTerminal.activitiesInput.split(',').map(s => s.trim()).filter(Boolean);
+        if (parsed.length > 0) finalActivities = parsed;
+      } else if (Array.isArray(editingTerminal.activities) && editingTerminal.activities.length > 0) {
+        finalActivities = editingTerminal.activities;
+      }
+
       const response = await fetch(`/api/terminals/${editingTerminal.id}`, {
         method: 'PUT',
         headers: {
@@ -1890,7 +1898,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         },
         body: JSON.stringify({ 
           name: editingTerminal.name,
-          activities: Array.isArray(editingTerminal.activities) ? editingTerminal.activities.filter(Boolean) : ['집', '학교', '외출']
+          activities: finalActivities
         })
       });
       
@@ -2475,7 +2483,10 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       </div>
                       
                       <button 
-                        onClick={() => setEditingTerminal(terminal)}
+                        onClick={() => setEditingTerminal({
+                          ...terminal,
+                          activitiesInput: Array.isArray(terminal.activities) ? terminal.activities.join(', ') : '집, 학교, 외출'
+                        })}
                         className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all shrink-0"
                         title={t('admin.buttons.settings')}
                       >
@@ -2718,8 +2729,8 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                     <input 
                       type="text"
                       placeholder="집, 학교, 외출"
-                      value={Array.isArray(editingTerminal.activities) ? editingTerminal.activities.join(', ') : '집, 학교, 외출'}
-                      onChange={(e) => setEditingTerminal({...editingTerminal, activities: e.target.value.split(',').map(s => s.trim())})}
+                      value={editingTerminal.activitiesInput ?? ''}
+                      onChange={(e) => setEditingTerminal({...editingTerminal, activitiesInput: e.target.value})}
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                     />
                     <p className="text-xs text-slate-400 mt-2 ml-2">단말기에서 선택할 수 있는 활동들을 쉼표로 구분하여 입력하세요.</p>
