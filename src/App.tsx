@@ -422,7 +422,7 @@ function AttendanceView({
     setIsLoadingChildren(true);
     try {
       const { data, error } = await supabase
-        .from(kioskSchoolInfo?.mode === 'academy' ? 'checki_edu_members' : 'checki_members')
+        .from(kioskSchoolInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
         .select('*')
         .eq('place_id', kioskSchoolInfo.id)
         .order('name', { ascending: true });
@@ -1739,7 +1739,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
       // 1. Fetch students
       let query = supabase
-        .from(placeInfo?.mode === 'academy' ? 'checki_edu_members' : 'checki_members')
+        .from(placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
         .select('*')
         .order('name', { ascending: true });
 
@@ -1896,7 +1896,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         throw new Error(t('admin.messages.no_place_info'));
       }
 
-      const targetTable = placeInfo?.mode === 'academy' ? 'checki_edu_members' : 'checki_members';
+      const targetTable = placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members';
 
       // Check if name already exists for this school
       const { data: existing, error: checkError } = await supabase
@@ -1910,26 +1910,26 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         throw new Error(t('admin.messages.already_registered_name'));
       }
 
-      let memberData: any = {
-        name: newStudent.name,
-        place_id: placeId
-      };
-
-      if (placeInfo?.mode === 'academy') {
-        memberData = {
-          ...memberData,
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          placeId,
+          name: newStudent.name,
+          isEdu: placeInfo?.mode === 'edu',
           birth_date: newStudent.birth_date || null,
           class_name: newStudent.class_name || null,
           parent_contact: newStudent.parent_contact || null,
           member_code: newStudent.member_code || null
-        };
-      }
+        })
+      });
 
-      const { error } = await supabase
-        .from(targetTable)
-        .insert([memberData]);
-      
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || t('admin.messages.register_error'));
+      }
       
       showNotification(t('admin.messages.register_success'));
       setNewStudent({ name: '' });
@@ -1960,7 +1960,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         body: JSON.stringify({
           placeId,
           name: editingStudent.name,
-          isEdu: placeInfo?.mode === 'academy',
+          isEdu: placeInfo?.mode === 'edu',
           birth_date: editingStudent.birth_date || null,
           class_name: editingStudent.class_name || null,
           parent_contact: editingStudent.parent_contact || null,
@@ -2034,7 +2034,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/students/${studentId}?placeId=${placeInfo.id}&isEdu=${placeInfo?.mode === 'academy'}`, {
+      const response = await fetch(`/api/students/${studentId}?placeId=${placeInfo.id}&isEdu=${placeInfo?.mode === 'edu'}`, {
         method: 'DELETE'
       });
       
@@ -2684,7 +2684,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
                     />
                   </div>
-                  {placeInfo?.mode === 'academy' && (
+                  {placeInfo?.mode === 'edu' && (
                     <>
                       <div>
                         <input
@@ -2780,7 +2780,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                     />
                   </div>
-                  {placeInfo?.mode === 'academy' && (
+                  {placeInfo?.mode === 'edu' && (
                     <>
                       <div>
                         <input
@@ -3569,7 +3569,7 @@ function HistoryView() {
     setIsSearched(false);
     try {
       // 1. Verify student and parent contact
-      const targetTable = placeInfo?.mode === 'academy' ? 'checki_edu_members' : 'checki_members';
+      const targetTable = placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members';
       const { data: memberData, error: memberError } = await supabase
         .from(targetTable)
         .select('*')
@@ -4492,7 +4492,7 @@ export default function App() {
 
       // 2. Fetch all students to join manually (more robust if foreign keys aren't set)
       let studentsQuery = supabase
-        .from(placeInfo?.mode === 'academy' ? 'checki_edu_members' : 'checki_members')
+        .from(placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
         .select('*');
 
       if (placeId) {
@@ -4688,7 +4688,7 @@ export default function App() {
       let childId: string | undefined;
       try {
         const { data } = await supabase
-          .from(kioskSchoolInfo?.mode === 'academy' ? 'checki_edu_members' : 'checki_members')
+          .from(kioskSchoolInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
           .select('id')
           .eq('name', childName)
           .eq('place_id', kioskSchoolInfo?.id)

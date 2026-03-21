@@ -495,6 +495,56 @@ const PORT = Number(process.env.PORT) || 3000;
   });
 
   // Update Student
+  app.post("/api/students", async (req, res) => {
+    const { placeId, userId, name, isEdu, birth_date, class_name, parent_contact, member_code } = req.body;
+    const supabase = getSupabaseAdmin() || getSupabase();
+    if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
+
+    const targetTable = isEdu ? 'checki_edu_members' : 'checki_members';
+
+    try {
+      // Check if name already exists for this school
+      const { data: existing, error: checkError } = await supabase
+        .from(targetTable)
+        .select('name')
+        .eq('name', name)
+        .eq('place_id', placeId)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        return res.status(400).json({ error: "이미 등록된 이름입니다." });
+      }
+
+      let memberData: any = {
+        name,
+        place_id: placeId
+      };
+
+      if (isEdu) {
+        memberData = {
+          ...memberData,
+          birth_date: birth_date || null,
+          class_name: class_name || null,
+          parent_contact: parent_contact || null,
+          member_code: member_code || null
+        };
+      }
+
+      const { data, error } = await supabase
+        .from(targetTable)
+        .insert([memberData])
+        .select()
+        .single();
+        
+      if (error) throw error;
+
+      res.status(201).json({ success: true, student: data });
+    } catch (error: any) {
+      console.error("Error creating student:", error);
+      res.status(500).json({ error: error.message || "학생 등록에 실패했습니다." });
+    }
+  });
+
   app.put("/api/students/:studentId", async (req, res) => {
     const { studentId } = req.params;
     const { placeId, name, isEdu, birth_date, class_name, parent_contact, member_code } = req.body;

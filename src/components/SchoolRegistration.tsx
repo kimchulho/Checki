@@ -14,7 +14,7 @@ export function SchoolRegistration() {
     email: '',
     name: '',
     contact_phone: '',
-    mode: 'home' as 'home' | 'academy' | 'business'
+    mode: 'home' as 'home' | 'edu' | 'business'
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,10 +89,10 @@ export function SchoolRegistration() {
               <Building2 className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold mb-1">
-              {formData.mode === 'academy' ? t('auth.register_title_academy') : t('auth.register_title')}
+              {formData.mode === 'edu' ? t('auth.edu') : t('auth.register_title')}
             </h1>
             <p className="text-orange-100 text-sm font-medium">
-              {formData.mode === 'academy' ? t('auth.register_subtitle_academy') : t('auth.register_subtitle')}
+              {formData.mode === 'edu' ? t('auth.register_subtitle_edu') : t('auth.register_subtitle')}
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export function SchoolRegistration() {
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.usage_type')}</label>
               <div className="grid grid-cols-3 gap-2">
-                {(['home', 'academy', 'business'] as const).map((m) => (
+                {(['home', 'edu', 'business'] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
@@ -120,7 +120,7 @@ export function SchoolRegistration() {
                         : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed'
                     }`}
                   >
-                    {m === 'home' ? t('auth.type_home') : m === 'academy' ? t('auth.type_academy') : t('auth.type_business')}
+                    {m === 'home' ? t('auth.type_home') : m === 'edu' ? t('auth.type_edu') : t('auth.type_business')}
                   </button>
                 ))}
               </div>
@@ -178,7 +178,7 @@ export function SchoolRegistration() {
 
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                {formData.mode === 'academy' ? t('auth.name_academy') : t('auth.name')}
+                {formData.mode === 'edu' ? t('auth.name_edu') : t('auth.name')}
               </label>
               <div className="relative">
                 <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -188,7 +188,7 @@ export function SchoolRegistration() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder={formData.mode === 'academy' ? t('auth.name_placeholder_academy') : t('auth.name_placeholder')}
+                  placeholder={formData.mode === 'edu' ? t('auth.name_placeholder_edu') : t('auth.name_placeholder')}
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
                 />
               </div>
