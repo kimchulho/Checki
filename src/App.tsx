@@ -768,7 +768,7 @@ function AttendanceView({
                     <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors shrink-0">
                       <Check className="w-5 h-5 text-orange-500" />
                     </div>
-                    <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-keep w-full text-center">{activity}</span>
+                    <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-all whitespace-normal w-full text-center">{activity}</span>
                   </button>
                 ))}
               </div>
@@ -792,7 +792,7 @@ function AttendanceView({
                       <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors shrink-0">
                         <User className="w-5 h-5 text-orange-500" />
                       </div>
-                      <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-keep w-full text-center">{child.name}</span>
+                      <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-all whitespace-normal w-full text-center">{child.name}</span>
                     </button>
                   );
                 })}
