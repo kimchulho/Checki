@@ -88,8 +88,12 @@ export function SchoolRegistration() {
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Building2 className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold mb-1">{t('auth.register_title')}</h1>
-            <p className="text-orange-100 text-sm font-medium">{t('auth.register_subtitle')}</p>
+            <h1 className="text-2xl font-bold mb-1">
+              {formData.mode === 'academy' ? t('auth.register_title_academy') : t('auth.register_title')}
+            </h1>
+            <p className="text-orange-100 text-sm font-medium">
+              {formData.mode === 'academy' ? t('auth.register_subtitle_academy') : t('auth.register_subtitle')}
+            </p>
           </div>
         </div>
 
@@ -174,7 +178,7 @@ export function SchoolRegistration() {
 
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                {t('auth.name')}
+                {formData.mode === 'academy' ? t('auth.name_academy') : t('auth.name')}
               </label>
               <div className="relative">
                 <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -184,7 +188,7 @@ export function SchoolRegistration() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder={t('auth.name_placeholder')}
+                  placeholder={formData.mode === 'academy' ? t('auth.name_placeholder_academy') : t('auth.name_placeholder')}
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
                 />
               </div>

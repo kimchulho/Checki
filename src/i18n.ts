@@ -6,6 +6,7 @@ const resources = {
   ko: {
     translation: {
       "common": {
+        "optional": "선택",
         "photo_modal": {
           "title": "출석 인증 사진",
           "secure_msg": "보안 암호화로 보호되는 사진입니다",
@@ -118,12 +119,16 @@ const resources = {
         "go_register": "무료로 가입하기",
         "register_title": "체키 관리자 가입",
         "register_subtitle": "체키와 함께 스마트한 관리를 시작하세요",
+        "register_title_academy": "체키 에듀 관리자 가입",
+        "register_subtitle_academy": "학원 출결 관리를 더 스마트하게",
         "usage_type": "어디서 사용하시나요?",
         "type_home": "체키 가정용",
         "type_academy": "체키 에듀",
         "type_business": "기업용 (준비중)",
         "name": "이름 (가족명/기관명)",
         "name_placeholder": "예: 김체키 가족",
+        "name_academy": "기관명 (학원명)",
+        "name_placeholder_academy": "예: 체키 어학원",
         "email": "이메일",
         "email_placeholder": "이메일 주소",
         "phone": "연락처",
@@ -387,6 +392,7 @@ const resources = {
   en: {
     translation: {
       "common": {
+        "optional": "Optional",
         "photo_modal": {
           "title": "Attendance Photo",
           "secure_msg": "Protected by secure encryption",
@@ -499,12 +505,16 @@ const resources = {
         "go_register": "Sign up for free",
         "register_title": "Checki Admin Sign Up",
         "register_subtitle": "Start smart management with Checki",
+        "register_title_academy": "Checki Edu Admin Sign Up",
+        "register_subtitle_academy": "Smarter academy attendance management",
         "usage_type": "Where will you use it?",
         "type_home": "Checki Home",
         "type_academy": "Checki Edu",
         "type_business": "Business (Coming soon)",
         "name": "Name (Family/Organization)",
         "name_placeholder": "e.g. Checki Family",
+        "name_academy": "Organization Name (Academy)",
+        "name_placeholder_academy": "e.g. Checki Academy",
         "email": "Email",
         "email_placeholder": "Email address",
         "phone": "Contact",
@@ -768,6 +778,7 @@ const resources = {
   ja: {
     translation: {
       "common": {
+        "optional": "任意",
         "photo_modal": {
           "title": "出席認証写真",
           "secure_msg": "安全な暗号化で保護されています",
@@ -880,12 +891,16 @@ const resources = {
         "go_register": "無料で登録する",
         "register_title": "チェキ管理者登録",
         "register_subtitle": "チェキでスマートな管理を始めましょう",
+        "register_title_academy": "チェキエデュ管理者登録",
+        "register_subtitle_academy": "塾の出席管理をよりスマートに",
         "usage_type": "どこで使用しますか？",
         "type_home": "チェキ家庭用",
         "type_academy": "チェキエデュ",
         "type_business": "企業用 (準備中)",
         "name": "名前 (家族名/機関名)",
         "name_placeholder": "例: チェキ家族",
+        "name_academy": "機関名 (塾名)",
+        "name_placeholder_academy": "例: チェキ語学院",
         "email": "メールアドレス",
         "email_placeholder": "メールアドレス",
         "phone": "連絡先",
