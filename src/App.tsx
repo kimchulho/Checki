@@ -324,7 +324,11 @@ function AttendanceView({
   const navigate = useNavigate();
 
   const handleActivitySelect = (activity: string) => {
-    setSelectedActivityToConfirm(activity);
+    if (selectedActivityToConfirm === activity) {
+      setSelectedActivityToConfirm(null);
+    } else {
+      setSelectedActivityToConfirm(activity);
+    }
   };
 
   const confirmActivity = () => {
@@ -495,7 +499,12 @@ function AttendanceView({
 
   const handleChildClick = (childName: string) => {
     if (isProcessing) return;
-    setPendingChildName(childName);
+    if (pendingChildName === childName) {
+      setPendingChildName(null);
+      setSelectedActivityToConfirm(null);
+    } else {
+      setPendingChildName(childName);
+    }
   };
 
   const screensaverVariants = {
@@ -737,7 +746,7 @@ function AttendanceView({
           )}
 
           {/* Grid of Children */}
-          <div className="w-full flex items-start justify-center h-full">
+          <div className="w-full flex flex-col items-center justify-start h-full gap-4 pb-2">
             {isLoadingChildren ? (
               <div className="h-full flex items-center justify-center">
                 <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" />
@@ -748,94 +757,110 @@ function AttendanceView({
                 <p className="text-sm font-medium">{t('terminal.messages.no_members')}</p>
                 <p className="text-[10px]">{t('terminal.messages.register_in_admin')}</p>
               </div>
-            ) : pendingChildName ? (
-              <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
-                <button
-                  onClick={() => setPendingChildName(null)}
-                  className="flex-shrink-0 w-28 md:w-36 h-32 bg-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm border border-slate-200 hover:bg-slate-200 active:scale-95 transition-all snap-center"
-                >
-                  <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                    <ArrowLeft className="w-5 h-5 text-slate-500" />
-                  </div>
-                  <span className="text-sm font-bold text-slate-600">뒤로</span>
-                </button>
-                {terminalActivities.map((activity: string, index: number) => (
-                  <button
-                    key={index}
-                    onClick={() => handleActivitySelect(activity)}
-                    className="flex-shrink-0 w-32 md:w-36 h-32 bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center"
-                  >
-                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors shrink-0">
-                      <Check className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-all whitespace-normal w-full text-center">{activity}</span>
-                  </button>
-                ))}
-              </div>
             ) : (
-              <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
-                {childrenList.map((child) => {
-                  let buttonWidthClass = '';
-                  if (childrenList.length === 1) {
-                    buttonWidthClass = 'w-full';
-                  } else if (childrenList.length === 2) {
-                    buttonWidthClass = 'w-[calc(50%-0.375rem)]';
-                  } else {
-                    buttonWidthClass = 'w-32 md:w-36';
-                  }
-                  return (
-                    <button
-                      key={child.id}
-                      onClick={() => handleChildClick(child.name)}
-                      className={`flex-shrink-0 h-32 bg-white rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border border-orange-50 hover:bg-orange-50 active:scale-95 transition-all group snap-center ${buttonWidthClass}`}
+              <>
+                <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
+                  {childrenList.map((child) => {
+                    let buttonWidthClass = '';
+                    if (childrenList.length === 1) {
+                      buttonWidthClass = 'w-full';
+                    } else if (childrenList.length === 2) {
+                      buttonWidthClass = 'w-[calc(50%-0.375rem)]';
+                    } else {
+                      buttonWidthClass = 'w-32 md:w-36';
+                    }
+                    const isSelected = pendingChildName === child.name;
+                    return (
+                      <button
+                        key={child.id}
+                        onClick={() => handleChildClick(child.name)}
+                        className={`flex-shrink-0 h-24 md:h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border active:scale-95 transition-all group snap-center ${buttonWidthClass} ${
+                          isSelected 
+                            ? 'bg-orange-500 border-orange-600 text-white' 
+                            : 'bg-white border-orange-50 hover:bg-orange-50'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                          isSelected ? 'bg-white/20' : 'bg-orange-100 group-hover:bg-orange-200'
+                        }`}>
+                          <User className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-orange-500'}`} />
+                        </div>
+                        <span className={`text-sm md:text-base font-black line-clamp-2 leading-tight break-all whitespace-normal w-full text-center ${
+                          isSelected ? 'text-white' : 'text-slate-700'
+                        }`}>{child.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <AnimatePresence>
+                  {pendingChildName && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0, y: -10 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -10 }}
+                      className="w-full flex flex-col gap-2"
                     >
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors shrink-0">
-                        <User className="w-5 h-5 text-orange-500" />
+                      <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
+                        {terminalActivities.map((activity: string, index: number) => {
+                          const isSelected = selectedActivityToConfirm === activity;
+                          return (
+                            <button
+                              key={index}
+                              onClick={() => handleActivitySelect(activity)}
+                              className={`flex-shrink-0 w-32 md:w-36 h-24 md:h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border active:scale-95 transition-all group snap-center ${
+                                isSelected 
+                                  ? 'bg-blue-500 border-blue-600 text-white' 
+                                  : 'bg-white border-blue-50 hover:bg-blue-50'
+                              }`}
+                            >
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                isSelected ? 'bg-white/20' : 'bg-blue-100 group-hover:bg-blue-200'
+                              }`}>
+                                <Check className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-blue-500'}`} />
+                              </div>
+                              <span className={`text-sm md:text-base font-black line-clamp-2 leading-tight break-all whitespace-normal w-full text-center ${
+                                isSelected ? 'text-white' : 'text-slate-700'
+                              }`}>{activity}</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                      <span className="text-base md:text-lg font-black text-slate-700 line-clamp-2 leading-tight break-all whitespace-normal w-full text-center">{child.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {pendingChildName && selectedActivityToConfirm && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="w-full flex gap-3 px-1 mt-auto"
+                    >
+                      <button
+                        onClick={() => {
+                          setPendingChildName(null);
+                          setSelectedActivityToConfirm(null);
+                        }}
+                        className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={confirmActivity}
+                        className="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200"
+                      >
+                        확인
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
             )}
           </div>
         </div>
       </main>
-
-      {/* Confirmation Modal */}
-      <AnimatePresence>
-        {selectedActivityToConfirm && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-sm bg-white/90 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-white/50 pointer-events-auto text-center"
-            >
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                {pendingChildName}
-              </h3>
-              <p className="text-lg text-slate-600 mb-6">
-                <span className="font-bold text-orange-500">{selectedActivityToConfirm}</span> 활동을 기록할까요?
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setSelectedActivityToConfirm(null)}
-                  className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={confirmActivity}
-                  className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors"
-                >
-                  확인
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Install Guide Modal */}
       <AnimatePresence>
