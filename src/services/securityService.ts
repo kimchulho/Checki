@@ -76,8 +76,8 @@ export async function decryptBlob(encryptedBlob: Blob, ivString: string): Promis
  */
 export async function uploadAttendanceData(
   childName: string, 
-  encryptedBlob: Blob, 
-  iv: Uint8Array, 
+  encryptedBlob?: Blob | null, 
+  iv?: Uint8Array | null, 
   placeId?: string, 
   activityType?: string,
   terminalId?: string,
@@ -91,25 +91,29 @@ export async function uploadAttendanceData(
   }
   try {
     const timestamp = new Date().toISOString();
-    const fileName = `${nanoid()}_${Date.now()}.enc`;
-    const ivString = btoa(String.fromCharCode(...iv));
+    let combinedUrl = null;
 
-    // 1. Upload encrypted image to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('checki-attendance-images')
-      .upload(fileName, encryptedBlob, {
-        contentType: 'application/octet-stream',
-        upsert: false
-      });
+    if (encryptedBlob && iv) {
+      const fileName = `${nanoid()}_${Date.now()}.enc`;
+      const ivString = btoa(String.fromCharCode(...iv));
 
-    if (uploadError) {
-      console.error('[Supabase Storage] Upload error:', uploadError);
-      throw uploadError;
+      // 1. Upload encrypted image to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('checki-attendance-images')
+        .upload(fileName, encryptedBlob, {
+          contentType: 'application/octet-stream',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('[Supabase Storage] Upload error:', uploadError);
+        throw uploadError;
+      }
+      combinedUrl = `${fileName}|${ivString}`;
     }
 
     // 2. Record attendance in the DB
-    const combinedUrl = `${fileName}|${ivString}`;
     const { error: dbError } = await supabase
       .from('checki_history')
       .insert([

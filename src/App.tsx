@@ -766,6 +766,8 @@ function AttendanceView({
                       buttonWidthClass = 'w-full';
                     } else if (childrenList.length === 2) {
                       buttonWidthClass = 'w-[calc(50%-0.375rem)]';
+                    } else if (childrenList.length === 3) {
+                      buttonWidthClass = 'w-[calc(33.333%-0.5rem)]';
                     } else {
                       buttonWidthClass = 'w-32 md:w-36';
                     }
@@ -803,12 +805,22 @@ function AttendanceView({
                     >
                       <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
                         {terminalActivities.map((activity: string, index: number) => {
+                          let activityWidthClass = '';
+                          if (terminalActivities.length === 1) {
+                            activityWidthClass = 'w-full';
+                          } else if (terminalActivities.length === 2) {
+                            activityWidthClass = 'w-[calc(50%-0.375rem)]';
+                          } else if (terminalActivities.length === 3) {
+                            activityWidthClass = 'w-[calc(33.333%-0.5rem)]';
+                          } else {
+                            activityWidthClass = 'w-32 md:w-36';
+                          }
                           const isSelected = selectedActivityToConfirm === activity;
                           return (
                             <button
                               key={index}
                               onClick={() => handleActivitySelect(activity)}
-                              className={`flex-shrink-0 w-32 md:w-36 h-24 md:h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border active:scale-95 transition-all group snap-center ${
+                              className={`flex-shrink-0 h-24 md:h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border active:scale-95 transition-all group snap-center ${activityWidthClass} ${
                                 isSelected 
                                   ? 'bg-blue-500 border-blue-600 text-white' 
                                   : 'bg-white border-blue-50 hover:bg-blue-50'
@@ -4392,109 +4404,112 @@ export default function App() {
   };
 
   const triggerInstantCapture = async (childName: string, selectedMode?: string) => {
-    if (!videoRef.current || videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
-      console.error('Video is not ready for capture');
-      return;
-    }
-
     setIsProcessing(true);
     setFlash(true);
     setTimeout(() => setFlash(false), 150);
     
     const modeToUse = selectedMode || currentCheckiMode;
     
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) {
-      console.error('Failed to get canvas context');
-      setIsProcessing(false);
-      return;
-    }
+    let blob: Blob | null = null;
+    let previewUrl: string | null = null;
 
-    if (facingMode === 'user') {
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-    }
-    ctx.drawImage(videoRef.current, 0, 0);
-    
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        console.error('Failed to create blob from canvas');
-        setIsProcessing(false);
-        return;
-      }
+    if (videoRef.current && videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
       
-      const previewUrl = URL.createObjectURL(blob);
-      setCapturedImage(previewUrl);
-      
-      try {
-        let childId: string | undefined;
-        try {
-          const { data } = await supabase
-            .from('checki_members')
-            .select('id')
-            .eq('name', childName)
-            .eq('place_id', kioskSchoolInfo?.id)
-            .single();
-          childId = data?.id;
-        } catch (e) {
-          console.error('Error fetching child id:', e);
+      if (ctx) {
+        if (facingMode === 'user') {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
         }
-
-        const placeId = kioskSchoolInfo?.id;
-        const terminalId = localStorage.getItem('checki_terminal_id') || undefined;
-        const terminalName = localStorage.getItem('checki_terminal_name') || undefined;
-
-        if (!placeId) {
-          throw new Error('기관 정보(placeId)를 찾을 수 없습니다. 다시 로그인해 주세요.');
-        }
-
-        const { encryptedBlob, iv } = await encryptBlob(blob);
-        await uploadAttendanceData(
-          childName, 
-          encryptedBlob, 
-          iv, 
-          placeId, 
-          modeToUse, 
-          terminalId, 
-          currentLocation?.lat, 
-          currentLocation?.lng,
-          terminalName,
-          childId
-        );
+        ctx.drawImage(videoRef.current, 0, 0);
         
-        // Trigger push notification
-        const notificationUrl = '/api/send-attendance-notification';
-        console.log(`Triggering notification at: ${window.location.origin}${notificationUrl}`);
-        fetch(notificationUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ childName, placeId, activity_type: modeToUse })
-        }).then(async (res) => {
-          if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            console.error('Notification trigger failed with status:', res.status, errorData);
-          } else {
-            console.log('Notification trigger successful');
-          }
-        }).catch(err => console.error('Notification trigger network error:', err));
-
-        setView('success');
-      } catch (error) {
-        console.error("Security/Upload error:", error);
-        setView('error');
-      } finally {
-        URL.revokeObjectURL(previewUrl);
-        setCapturedImage(null);
-        setIsProcessing(false);
-        setTimeout(() => {
-          setView('idle');
-        }, 1500);
+        blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+        if (blob) {
+          previewUrl = URL.createObjectURL(blob);
+          setCapturedImage(previewUrl);
+        }
       }
-    }, 'image/jpeg', 0.8);
+    } else {
+      console.warn('Video is not ready for capture, proceeding without image');
+    }
+    
+    try {
+      let childId: string | undefined;
+      try {
+        const { data } = await supabase
+          .from('checki_members')
+          .select('id')
+          .eq('name', childName)
+          .eq('place_id', kioskSchoolInfo?.id)
+          .single();
+        childId = data?.id;
+      } catch (e) {
+        console.error('Error fetching child id:', e);
+      }
+
+      const placeId = kioskSchoolInfo?.id;
+      const terminalId = localStorage.getItem('checki_terminal_id') || undefined;
+      const terminalName = localStorage.getItem('checki_terminal_name') || undefined;
+
+      if (!placeId) {
+        throw new Error('기관 정보(placeId)를 찾을 수 없습니다. 다시 로그인해 주세요.');
+      }
+
+      let encryptedBlob: Blob | null = null;
+      let iv: Uint8Array | null = null;
+      
+      if (blob) {
+        const encrypted = await encryptBlob(blob);
+        encryptedBlob = encrypted.encryptedBlob;
+        iv = encrypted.iv;
+      }
+
+      await uploadAttendanceData(
+        childName, 
+        encryptedBlob, 
+        iv, 
+        placeId, 
+        modeToUse, 
+        terminalId, 
+        currentLocation?.lat, 
+        currentLocation?.lng,
+        terminalName,
+        childId
+      );
+      
+      // Trigger push notification
+      const notificationUrl = '/api/send-attendance-notification';
+      console.log(`Triggering notification at: ${window.location.origin}${notificationUrl}`);
+      fetch(notificationUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ childName, placeId, activity_type: modeToUse })
+      }).then(async (res) => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Notification trigger failed with status:', res.status, errorData);
+        } else {
+          console.log('Notification trigger successful');
+        }
+      }).catch(err => console.error('Notification trigger network error:', err));
+
+      setView('success');
+    } catch (error) {
+      console.error("Security/Upload error:", error);
+      setView('error');
+    } finally {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setCapturedImage(null);
+      setIsProcessing(false);
+      setTimeout(() => {
+        setView('idle');
+      }, 1500);
+    }
   };
 
   return (
