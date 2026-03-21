@@ -321,13 +321,16 @@ function AttendanceView({
   const [isInstallable, setIsInstallable] = useState(false);
   const [isScanningQR, setIsScanningQR] = useState(false);
   const [selectedActivityToConfirm, setSelectedActivityToConfirm] = useState<string | null>(null);
+  const [customActivity, setCustomActivity] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleActivitySelect = (activity: string) => {
     if (selectedActivityToConfirm === activity) {
       setSelectedActivityToConfirm(null);
+      if (customActivity === activity) setCustomActivity(null);
     } else {
       setSelectedActivityToConfirm(activity);
+      if (customActivity && activity !== customActivity) setCustomActivity(null);
     }
   };
 
@@ -336,6 +339,7 @@ function AttendanceView({
       triggerInstantCapture(pendingChildName, selectedActivityToConfirm);
       setPendingChildName(null);
       setSelectedActivityToConfirm(null);
+      setCustomActivity(null);
     }
   };
   const [isStandalone, setIsStandalone] = useState(false);
@@ -502,6 +506,7 @@ function AttendanceView({
     if (pendingChildName === childName) {
       setPendingChildName(null);
       setSelectedActivityToConfirm(null);
+      setCustomActivity(null);
     } else {
       setPendingChildName(childName);
     }
@@ -802,7 +807,7 @@ function AttendanceView({
                       className="w-full flex flex-col gap-2"
                     >
                       <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
-                        {[t('terminal.modes.manual'), ...terminalActivities].map((activity: string, index: number) => {
+                        {[customActivity || t('terminal.modes.manual'), ...terminalActivities].map((activity: string, index: number) => {
                           const totalActivities = terminalActivities.length + 1;
                           let activityWidthClass = '';
                           if (totalActivities === 1) {
@@ -812,13 +817,13 @@ function AttendanceView({
                           } else {
                             activityWidthClass = 'w-[calc(33.333%-0.5rem)]';
                           }
-                          const isManual = activity === t('terminal.modes.manual');
+                          const isManual = index === 0;
                           const isSelected = selectedActivityToConfirm === activity;
                           return (
                             <button
                               key={index}
                               onClick={() => {
-                                if (isManual) {
+                                if (isManual && !customActivity) {
                                   setShowDirectInput(true);
                                 } else {
                                   handleActivitySelect(activity);
@@ -833,7 +838,7 @@ function AttendanceView({
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected ? 'bg-white/20' : 'bg-blue-100 group-hover:bg-blue-200'
                               }`}>
-                                {isManual ? (
+                                {isManual && !customActivity ? (
                                   <Edit className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-blue-500'}`} />
                                 ) : (
                                   <Check className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-blue-500'}`} />
@@ -862,6 +867,7 @@ function AttendanceView({
                         onClick={() => {
                           setPendingChildName(null);
                           setSelectedActivityToConfirm(null);
+                          setCustomActivity(null);
                         }}
                         className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
                       >
@@ -1030,15 +1036,11 @@ function AttendanceView({
                   onClick={() => {
                     if (directInput.trim()) {
                       const mode = directInput.trim();
-                      setCurrentCheckiMode(mode);
+                      setCustomActivity(mode);
+                      setSelectedActivityToConfirm(mode);
                       setDirectInput('');
                       setShowDirectInput(false);
                       setShowModeSelector(false);
-                      if (pendingChildName) {
-                        triggerInstantCapture(pendingChildName, mode);
-                        setPendingChildName(null);
-                        setSelectedActivityToConfirm(null);
-                      }
                     }
                   }}
                   className="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-bold shadow-lg shadow-orange-100"
