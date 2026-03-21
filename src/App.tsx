@@ -802,20 +802,28 @@ function AttendanceView({
                       className="w-full flex flex-col gap-2"
                     >
                       <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
-                        {terminalActivities.map((activity: string, index: number) => {
+                        {[t('terminal.modes.manual'), ...terminalActivities].map((activity: string, index: number) => {
+                          const totalActivities = terminalActivities.length + 1;
                           let activityWidthClass = '';
-                          if (terminalActivities.length === 1) {
+                          if (totalActivities === 1) {
                             activityWidthClass = 'w-full';
-                          } else if (terminalActivities.length === 2) {
+                          } else if (totalActivities === 2) {
                             activityWidthClass = 'w-[calc(50%-0.375rem)]';
                           } else {
                             activityWidthClass = 'w-[calc(33.333%-0.5rem)]';
                           }
+                          const isManual = activity === t('terminal.modes.manual');
                           const isSelected = selectedActivityToConfirm === activity;
                           return (
                             <button
                               key={index}
-                              onClick={() => handleActivitySelect(activity)}
+                              onClick={() => {
+                                if (isManual) {
+                                  setShowDirectInput(true);
+                                } else {
+                                  handleActivitySelect(activity);
+                                }
+                              }}
                               className={`flex-shrink-0 h-24 md:h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border active:scale-95 transition-all group snap-center ${activityWidthClass} ${
                                 isSelected 
                                   ? 'bg-blue-500 border-blue-600 text-white' 
@@ -825,7 +833,11 @@ function AttendanceView({
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                                 isSelected ? 'bg-white/20' : 'bg-blue-100 group-hover:bg-blue-200'
                               }`}>
-                                <Check className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-blue-500'}`} />
+                                {isManual ? (
+                                  <Edit className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-blue-500'}`} />
+                                ) : (
+                                  <Check className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-blue-500'}`} />
+                                )}
                               </div>
                               <span className={`text-sm md:text-base font-black line-clamp-2 leading-tight break-all whitespace-normal w-full text-center ${
                                 isSelected ? 'text-white' : 'text-slate-700'
@@ -1025,6 +1037,7 @@ function AttendanceView({
                       if (pendingChildName) {
                         triggerInstantCapture(pendingChildName, mode);
                         setPendingChildName(null);
+                        setSelectedActivityToConfirm(null);
                       }
                     }
                   }}
@@ -2906,11 +2919,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              <div className="p-4 bg-slate-900 aspect-video flex items-center justify-center">
+              <div className="p-4 bg-slate-900 aspect-square flex items-center justify-center overflow-hidden">
                 <img 
                   src={selectedPhoto.url} 
                   alt="Attendance" 
-                  className="max-w-full max-h-full object-contain rounded-xl"
+                  className="w-full h-full object-cover object-center rounded-xl"
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -3936,8 +3949,8 @@ function HistoryView() {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              <div className="aspect-video bg-slate-900 flex items-center justify-center">
-                <img src={selectedPhoto.url} alt="Attendance" className="max-w-full max-h-full object-contain" />
+              <div className="aspect-square bg-slate-900 flex items-center justify-center overflow-hidden">
+                <img src={selectedPhoto.url} alt="Attendance" className="w-full h-full object-cover object-center" />
               </div>
               <div className="p-6 bg-slate-50 flex flex-col items-center gap-4">
                 <div className="text-center">
