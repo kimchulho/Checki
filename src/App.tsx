@@ -342,6 +342,18 @@ function AttendanceView({
       setCustomActivity(null);
     }
   };
+
+  useEffect(() => {
+    if (isPowerSaving) {
+      setPendingChildName(null);
+      setSelectedActivityToConfirm(null);
+      setCustomActivity(null);
+      setShowDirectInput(false);
+      setDirectInput('');
+      setShowModeSelector(false);
+    }
+  }, [isPowerSaving, setPendingChildName, setShowDirectInput, setDirectInput, setShowModeSelector]);
+
   const [isStandalone, setIsStandalone] = useState(false);
   const [installGuideType, setInstallGuideType] = useState<'ios' | 'android' | 'other' | null>(null);
 
