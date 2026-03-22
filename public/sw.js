@@ -49,7 +49,7 @@ self.addEventListener('push', function(event) {
     color: '#F97316', // Notification accent color (orange)
     // Unique vibration pattern: Short-Short-Short-Long (Rapid fire then alert)
     vibrate: [100, 50, 100, 50, 100, 50, 500],
-    tag: 'attendance-notification', // Use a tag to replace old notifications
+    tag: data.tag || 'attendance-notification', // Use a tag to replace old notifications
     renotify: true, // Vibrate even if the tag is the same
     requireInteraction: true, // Keep notification until user interacts
     silent: false, // Ensure it's not silent

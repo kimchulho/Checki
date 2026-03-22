@@ -133,8 +133,19 @@ const PORT = Number(process.env.PORT) || 3000;
 
       const { data: parentSubscriptions, error: parentSubError } = await supabase
         .from('checki_push_subscriptions')
-        .select('subscription, phone_number')
+        .select('subscription, phone_number, member_code')
         .in('member_code', memberIds);
+
+      // If there are home subscriptions, fetch the home member to get the place_id
+      let homePlaceId: string | null = null;
+      if (member.home_member_id && parentSubscriptions?.some(s => s.member_code === member.home_member_id)) {
+        const { data: homeMember } = await supabase
+          .from('checki_members')
+          .select('place_id')
+          .eq('id', member.home_member_id)
+          .single();
+        if (homeMember) homePlaceId = homeMember.place_id;
+      }
 
       if (adminSubError) throw adminSubError;
       if (parentSubError) throw parentSubError;
@@ -149,24 +160,8 @@ const PORT = Number(process.env.PORT) || 3000;
         return res.json({ success: true, sentCount: 0 });
       }
 
-      // Remove duplicates based on endpoint, keeping the first one found
-      const uniqueSubscriptions = Array.from(new Set(allSubscriptions.map(s => {
-        const sub = typeof s.subscription === 'string' ? JSON.parse(s.subscription) : s.subscription;
-        return sub.endpoint;
-      }))).map(endpoint => {
-        const found = allSubscriptions.find(s => {
-          const sub = typeof s.subscription === 'string' ? JSON.parse(s.subscription) : s.subscription;
-          return sub.endpoint === endpoint;
-        });
-        return {
-          subscription: typeof found.subscription === 'string' ? JSON.parse(found.subscription) : found.subscription,
-          type: found.type,
-          phone_number: found.phone_number
-        };
-      });
-
       // 3. Send notifications
-      console.log(`Sending notifications to ${uniqueSubscriptions.length} subscribers for ${childName}`);
+      console.log(`Sending notifications to ${allSubscriptions.length} subscribers for ${childName}`);
       
       // Helper to determine '이가' or '가' based on Korean batchim
       const getParticle = (name: string) => {
@@ -187,13 +182,20 @@ const PORT = Number(process.env.PORT) || 3000;
       });
       
       const results = await Promise.allSettled(
-        uniqueSubscriptions.map(subInfo => {
+        allSubscriptions.map(subInfo => {
           let targetUrl = '/';
           if (subInfo.type === 'admin') {
             targetUrl = `/admin?autoLogin=true&placeId=${targetPlaceId}`;
           } else if (subInfo.type === 'parent') {
-            const loginId = member.member_code || member.id;
-            targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
+            // Check if this subscription belongs to the home member
+            const isHomeSubscription = member.home_member_id && subInfo.member_code === member.home_member_id;
+            
+            if (isHomeSubscription && homePlaceId) {
+              targetUrl = `/history/${homePlaceId}?autoLogin=true&id=${member.home_member_id}&key=${subInfo.phone_number}`;
+            } else {
+              const loginId = member.member_code || member.id;
+              targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
+            }
           }
 
           const customPayload = {
@@ -203,10 +205,12 @@ const PORT = Number(process.env.PORT) || 3000;
             badge: '/badge.svg',
             url: targetUrl, // For old service workers
             data: { url: targetUrl }, // For new service workers
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            tag: `attendance-${subInfo.type}-${childName}` // Unique tag per type so they don't overwrite
           };
 
-          return webpush.sendNotification(subInfo.subscription, JSON.stringify(customPayload));
+          const sub = typeof subInfo.subscription === 'string' ? JSON.parse(subInfo.subscription) : subInfo.subscription;
+          return webpush.sendNotification(sub, JSON.stringify(customPayload));
         })
       );
 
@@ -877,11 +881,21 @@ const PORT = Number(process.env.PORT) || 3000;
 
       if (error) {
         // Fallback if parent_viewed_at doesn't exist
-        console.warn("parent_viewed_at column might not exist, falling back to viewed_at");
-        await supabase
+        console.warn("parent_viewed_at column might not exist, falling back to appending to image_url");
+        
+        // Fetch current image_url
+        const { data: record } = await supabase
           .from('checki_history')
-          .update({ viewed_at: new Date().toISOString() })
-          .eq('id', id);
+          .select('image_url')
+          .eq('id', id)
+          .single();
+          
+        if (record && record.image_url && !record.image_url.includes('|parent_viewed')) {
+          await supabase
+            .from('checki_history')
+            .update({ image_url: `${record.image_url}|parent_viewed` })
+            .eq('id', id);
+        }
       }
 
       res.json({ success: true });

@@ -1649,7 +1649,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         return;
       }
 
-      const swReg = await navigator.serviceWorker.register('/sw.js?v=1.7');
+      const swReg = await navigator.serviceWorker.register('/sw.js?v=1.9');
       const registration = await navigator.serviceWorker.ready;
       
       const response = await fetch('/api/vapid-public-key');
@@ -2654,7 +2654,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                                 <span className="px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-sm font-bold">
                                   {item.activity_type || t('admin.status.verified')}
                                 </span>
-                                {item.parent_viewed_at && (
+                                {(item.parent_viewed_at || (item.image_url && item.image_url.includes('|parent_viewed'))) && (
                                   <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center gap-1">
                                     <UserCheck className="w-3 h-3" />
                                     학부모 확인
@@ -4012,11 +4012,11 @@ function HistoryView() {
 
       console.log('Registering service worker...');
       // Use version query to bypass cache
-      const swReg = await navigator.serviceWorker.register('/sw.js?v=1.7', {
+      const swReg = await navigator.serviceWorker.register('/sw.js?v=1.9', {
         updateViaCache: 'none'
       });
       await swReg.update(); // Force update check
-      console.log('Service worker registered and updated to v1.7');
+      console.log('Service worker registered and updated to v1.9');
       const registration = await navigator.serviceWorker.ready;
       console.log('Service worker ready');
 
@@ -4172,12 +4172,18 @@ function HistoryView() {
     if (!item.image_url) return;
 
     // Mark as viewed if not already viewed
-    if (!item.parent_viewed_at && !item.viewed_at) {
+    if (!item.parent_viewed_at && !(item.image_url && item.image_url.includes('|parent_viewed'))) {
       const now = new Date().toISOString();
       
       // Optimistic update
       setAttendance(prev => prev.map(record => 
-        record.id === item.id ? { ...record, parent_viewed_at: now, viewed_at: now } : record
+        record.id === item.id ? { 
+          ...record, 
+          parent_viewed_at: now,
+          image_url: record.image_url && !record.image_url.includes('|parent_viewed') 
+            ? `${record.image_url}|parent_viewed` 
+            : record.image_url
+        } : record
       ));
 
       // Background DB update via server API (bypasses RLS)
@@ -4399,7 +4405,7 @@ function HistoryView() {
                             }`}
                           >
                             <ImageIcon className="w-5 h-5" />
-                            {item.image_url && !item.viewed_at && (
+                            {item.image_url && !item.parent_viewed_at && !(item.image_url && item.image_url.includes('|parent_viewed')) && (
                               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse" />
                             )}
                           </button>
