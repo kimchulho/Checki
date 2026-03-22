@@ -2877,7 +2877,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
             >
               <div className="p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-slate-800">{t('admin.messages.register_member_title', { members: t('admin.tabs.members') })}</h3>
+                  <h3 className="text-2xl font-bold text-slate-800">{t('admin.common.register_member_title', { members: t('admin.tabs.members') })}</h3>
                   <button onClick={() => setIsRegistering(false)} className="text-slate-400 hover:text-slate-600">
                     <X className="w-6 h-6" />
                   </button>
@@ -2885,10 +2885,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div>
+                    <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.member_name_label')}</label>
                     <input 
                       required
                       type="text"
-                      placeholder={t('admin.messages.member_name_placeholder')}
+                      placeholder={t('admin.common.member_name_placeholder')}
                       value={newStudent.name}
                       onChange={e => setNewStudent({...newStudent, name: e.target.value})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
@@ -2897,36 +2898,40 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   {placeInfo?.mode === 'edu' && (
                     <>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.birth_date_label')}</label>
                         <input
                           type="text"
-                          placeholder="생년월일 (예: 20150101)"
+                          placeholder={t('admin.common.birth_date_placeholder')}
                           value={newStudent.birth_date}
                           onChange={e => setNewStudent({...newStudent, birth_date: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
                         />
                       </div>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.class_name_label')}</label>
                         <input
                           type="text"
-                          placeholder="수강반"
+                          placeholder={t('admin.common.class_name_placeholder')}
                           value={newStudent.class_name}
                           onChange={e => setNewStudent({...newStudent, class_name: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
                         />
                       </div>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.parent_contact_label')}</label>
                         <input
                           type="text"
-                          placeholder="학부모 연락처 (예: 010-1234-5678)"
+                          placeholder={t('admin.common.parent_contact_placeholder')}
                           value={newStudent.parent_contact}
                           onChange={e => setNewStudent({...newStudent, parent_contact: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
                         />
                       </div>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.member_code_label')}</label>
                         <input
                           type="text"
-                          placeholder="출석번호"
+                          placeholder={t('admin.common.member_code_placeholder')}
                           value={newStudent.member_code}
                           onChange={e => setNewStudent({...newStudent, member_code: e.target.value})}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold"
@@ -2945,7 +2950,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                     ) : (
                       <Save className="w-5 h-5" />
                     )}
-                    <span>{t('admin.messages.save')}</span>
+                    <span>{t('admin.common.save')}</span>
                   </button>
                 </form>
               </div>
@@ -2973,7 +2978,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
             >
               <div className="p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-slate-800">{t('admin.messages.edit_member_title', { members: t('admin.tabs.members') })}</h3>
+                  <h3 className="text-2xl font-bold text-slate-800">{t('admin.common.edit_member_title', { members: t('admin.tabs.members') })}</h3>
                   <button onClick={() => setEditingStudent(null)} className="text-slate-400 hover:text-slate-600">
                     <X className="w-6 h-6" />
                   </button>
@@ -2981,10 +2986,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
                 <form onSubmit={handleUpdateStudent} className="space-y-6">
                   <div>
+                    <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.member_name_label')}</label>
                     <input 
                       required
                       type="text"
-                      placeholder={t('admin.messages.member_name_placeholder')}
+                      placeholder={t('admin.common.member_name_placeholder')}
                       value={editingStudent.name}
                       onChange={(e) => setEditingStudent({...editingStudent, name: e.target.value})}
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
@@ -2993,36 +2999,40 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   {placeInfo?.mode === 'edu' && (
                     <>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.birth_date_label')}</label>
                         <input
                           type="text"
-                          placeholder="생년월일 (예: 20150101)"
+                          placeholder={t('admin.common.birth_date_placeholder')}
                           value={editingStudent.birth_date || ''}
                           onChange={e => setEditingStudent({...editingStudent, birth_date: e.target.value})}
                           className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                         />
                       </div>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.class_name_label')}</label>
                         <input
                           type="text"
-                          placeholder="수강반"
+                          placeholder={t('admin.common.class_name_placeholder')}
                           value={editingStudent.class_name || ''}
                           onChange={e => setEditingStudent({...editingStudent, class_name: e.target.value})}
                           className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                         />
                       </div>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.parent_contact_label')}</label>
                         <input
                           type="text"
-                          placeholder="학부모 연락처 (예: 010-1234-5678)"
+                          placeholder={t('admin.common.parent_contact_placeholder')}
                           value={editingStudent.parent_contact || ''}
                           onChange={e => setEditingStudent({...editingStudent, parent_contact: e.target.value})}
                           className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                         />
                       </div>
                       <div>
+                        <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.common.member_code_label')}</label>
                         <input
                           type="text"
-                          placeholder="출석번호"
+                          placeholder={t('admin.common.member_code_placeholder')}
                           value={editingStudent.member_code || ''}
                           onChange={e => setEditingStudent({...editingStudent, member_code: e.target.value})}
                           className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
@@ -3030,8 +3040,8 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       </div>
                       <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-slate-600">초대 코드</span>
-                          <span className="text-sm text-slate-500">{editingStudent.invite_code || '없음'}</span>
+                          <span className="text-sm font-bold text-slate-600">{t('admin.common.invite_code_label')}</span>
+                          <span className="text-sm text-slate-500">{editingStudent.invite_code || t('admin.common.invite_code_none')}</span>
                         </div>
                         <button
                           type="button"
@@ -3041,7 +3051,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                               if (res.ok) {
                                 const data = await res.json();
                                 setEditingStudent({...editingStudent, invite_code: data.invite_code});
-                                showNotification('초대 코드가 생성되었습니다.');
+                                showNotification(t('admin.common.invite_code_success'));
                               }
                             } catch (e) {
                               console.error(e);
@@ -3049,7 +3059,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                           }}
                           className="w-full py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm hover:bg-blue-100"
                         >
-                          초대 코드 생성/재발급
+                          {t('admin.common.invite_code_generate')}
                         </button>
                       </div>
                     </>
@@ -3144,17 +3154,17 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.messages.registration_date')}</span>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.common.registration_date')}</span>
                       <span className="text-sm font-bold text-slate-600">
                         {new Date(editingStudent.created_at).toLocaleDateString(dateLocale)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.messages.last_activity')}</span>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.common.last_activity')}</span>
                       <span className="text-sm font-bold text-slate-600">
                         {editingStudent.last_activity_at 
                           ? `${new Date(editingStudent.last_activity_at).toLocaleDateString(dateLocale)} ${new Date(editingStudent.last_activity_at).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })}`
-                          : t('admin.messages.no_activity')}
+                          : t('admin.common.no_activity')}
                       </span>
                     </div>
                   </div>
@@ -3165,7 +3175,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       onClick={() => setEditingStudent(null)}
                       className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
                     >
-                      {t('admin.messages.cancel')}
+                      {t('admin.common.cancel')}
                     </button>
                     <button
                       type="button"
@@ -3185,7 +3195,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       {isSaving ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        t('admin.messages.save')
+                        t('admin.common.save')
                       )}
                     </button>
                   </div>
@@ -3223,6 +3233,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
                 <form onSubmit={handleUpdateTerminal} className="space-y-6">
                   <div>
+                    <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.messages.terminal_name_label')}</label>
                     <input 
                       required
                       type="text"
@@ -3234,21 +3245,21 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   </div>
 
                   <div>
-                    <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">활동 목록 (쉼표로 구분)</label>
+                    <label className="text-sm font-bold text-slate-500 ml-2 mb-2 block">{t('admin.messages.activity_list_label')}</label>
                     <input 
                       type="text"
-                      placeholder="집, 학교, 외출"
+                      placeholder={t('admin.messages.activity_list_placeholder')}
                       value={editingTerminal.activitiesInput ?? ''}
                       onChange={(e) => setEditingTerminal({...editingTerminal, activitiesInput: e.target.value})}
                       className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all font-bold text-slate-700"
                     />
-                    <p className="text-xs text-slate-400 mt-2 ml-2">단말기에서 선택할 수 있는 활동들을 쉼표로 구분하여 입력하세요.</p>
+                    <p className="text-xs text-slate-400 mt-2 ml-2">{t('admin.messages.activity_list_desc')}</p>
                   </div>
 
                   <div className="space-y-3">
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.messages.id')}</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.common.id')}</span>
                         <span className="text-xs font-mono font-bold text-slate-600">
                           {editingTerminal.id}
                         </span>
@@ -3257,17 +3268,17 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.messages.registration_date')}</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.common.registration_date')}</span>
                         <span className="text-sm font-bold text-slate-600">
                           {new Date(editingTerminal.created_at).toLocaleDateString(dateLocale)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">최근 활동</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('admin.common.recent_activity')}</span>
                         <span className="text-sm font-bold text-slate-600">
                           {editingTerminal.last_seen_at 
                             ? `${new Date(editingTerminal.last_seen_at).toLocaleDateString(dateLocale)} ${new Date(editingTerminal.last_seen_at).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })}`
-                            : '기록 없음'}
+                            : t('admin.common.no_activity')}
                         </span>
                       </div>
                     </div>
@@ -3279,7 +3290,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       onClick={() => setEditingTerminal(null)}
                       className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
                     >
-                      {t('admin.messages.cancel')}
+                      {t('admin.common.cancel')}
                     </button>
                     <button
                       type="button"
@@ -3299,7 +3310,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       {isSaving ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        t('admin.messages.save')
+                        t('admin.common.save')
                       )}
                     </button>
                   </div>
@@ -3520,7 +3531,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   onClick={() => setDeletingStudentId(null)}
                   className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
                 >
-                  {t('admin.messages.cancel')}
+                  {t('admin.common.cancel')}
                 </button>
                 <button
                   onClick={() => handleDeleteStudent(deletingStudentId)}
@@ -3555,7 +3566,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   onClick={() => setDeletingTerminalId(null)}
                   className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
                 >
-                  {t('admin.messages.cancel')}
+                  {t('admin.common.cancel')}
                 </button>
                 <button
                   onClick={() => deleteTerminal(deletingTerminalId)}
@@ -3628,14 +3639,14 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
               <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <LogOut className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">{t('admin.messages.logout_confirm_title')}</h3>
-              <p className="text-slate-500 mb-8 text-sm">{t('admin.messages.logout_confirm_desc')}</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">{t('admin.common.logout_confirm_title')}</h3>
+              <p className="text-slate-500 mb-8 text-sm">{t('admin.common.logout_confirm_desc')}</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setIsLogoutConfirmOpen(false)}
                   className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
                 >
-                  {t('admin.messages.cancel')}
+                  {t('admin.common.cancel')}
                 </button>
                 <button
                   onClick={() => {
@@ -3645,7 +3656,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   }}
                   className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
                 >
-                  {t('admin.messages.logout')}
+                  {t('admin.common.logout')}
                 </button>
               </div>
             </motion.div>
