@@ -142,17 +142,59 @@ const PORT = Number(process.env.PORT) || 3000;
         allSubscriptions = (adminSubscriptions || []).map(s => ({ ...s, type: 'admin' }));
       } else if (memberType === 'edu') {
         // Checki Edu -> Notify Parent and Admin
-        const memberIds = [member.id];
-        if (member.home_member_id) memberIds.push(member.home_member_id);
-        if (member.member_code) memberIds.push(member.member_code); // For backward compatibility
+        let parentSubscriptions: any[] = [];
 
-        // Fetch parent subscriptions
-        const { data: parentSubscriptions, error: parentSubError } = await supabase
+        // 1. Check if the student is linked to a home account
+        if (member.home_member_id) {
+          // 2. Fetch the home member to get the home's place_id
+          const { data: homeMember } = await supabase
+            .from('checki_members')
+            .select('place_id')
+            .eq('id', member.home_member_id)
+            .single();
+
+          if (homeMember && homeMember.place_id) {
+            homePlaceId = homeMember.place_id;
+
+            // 3. Fetch parent subscriptions using the home's place_id
+            const { data: homeSubs, error: homeSubError } = await supabase
+              .from('checki_push_subscriptions')
+              .select('subscription, phone_number, member_code, place_id')
+              .eq('place_id', homePlaceId);
+
+            if (!homeSubError && homeSubs) {
+              parentSubscriptions = [...parentSubscriptions, ...homeSubs];
+            }
+          }
+        }
+
+        // Fallback: Also check if parent subscribed directly to the academy place_id
+        const memberIds = [member.id];
+        if (member.member_code) memberIds.push(member.member_code);
+
+        const { data: directSubs, error: directSubError } = await supabase
           .from('checki_push_subscriptions')
-          .select('subscription, phone_number, member_code')
+          .select('subscription, phone_number, member_code, place_id')
+          .eq('place_id', targetPlaceId)
           .in('member_code', memberIds);
 
-        if (parentSubError) throw parentSubError;
+        if (!directSubError && directSubs) {
+          parentSubscriptions = [...parentSubscriptions, ...directSubs];
+        }
+
+        // Deduplicate subscriptions by endpoint
+        const uniqueSubs = new Map();
+        parentSubscriptions.forEach(sub => {
+          try {
+            const subObj = typeof sub.subscription === 'string' ? JSON.parse(sub.subscription) : sub.subscription;
+            if (subObj && subObj.endpoint) {
+              uniqueSubs.set(subObj.endpoint, sub);
+            }
+          } catch (e) {
+            // Ignore invalid subscription JSON
+          }
+        });
+        parentSubscriptions = Array.from(uniqueSubs.values());
 
         // Fetch admin subscriptions
         const { data: adminSubscriptions, error: adminSubError } = await supabase
@@ -163,18 +205,8 @@ const PORT = Number(process.env.PORT) || 3000;
 
         if (adminSubError) throw adminSubError;
 
-        // If there are home subscriptions, fetch the home member to get the place_id
-        if (member.home_member_id && parentSubscriptions?.some(s => s.member_code === member.home_member_id)) {
-          const { data: homeMember } = await supabase
-            .from('checki_members')
-            .select('place_id')
-            .eq('id', member.home_member_id)
-            .single();
-          if (homeMember) homePlaceId = homeMember.place_id;
-        }
-
         allSubscriptions = [
-          ...(parentSubscriptions || []).map(s => ({ ...s, type: 'parent' })),
+          ...parentSubscriptions.map(s => ({ ...s, type: 'parent' })),
           ...(adminSubscriptions || []).map(s => ({ ...s, type: 'admin' }))
         ];
       }
@@ -218,10 +250,11 @@ const PORT = Number(process.env.PORT) || 3000;
           targetUrl = `/admin?autoLogin=true&placeId=${targetPlaceId}`;
         } else if (subInfo.type === 'parent') {
           // Check if this subscription belongs to the home member
-          const isHomeSubscription = member.home_member_id && subInfo.member_code === member.home_member_id;
+          const isHomeSubscription = homePlaceId && subInfo.place_id === homePlaceId;
           
-          if (isHomeSubscription && homePlaceId) {
-            targetUrl = `/history/${homePlaceId}?autoLogin=true&id=${member.home_member_id}&key=${subInfo.phone_number}`;
+          if (isHomeSubscription) {
+            const loginId = subInfo.member_code || member.home_member_id;
+            targetUrl = `/history/${homePlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
           } else {
             const loginId = member.member_code || member.id;
             targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
