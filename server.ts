@@ -90,7 +90,7 @@ const PORT = Number(process.env.PORT) || 3000;
       let member: any = null;
       let memberError: any = null;
       const terminalMode = req.body.terminalMode || 'home';
-      const memberType: 'home' | 'edu' = (terminalMode === 'edu' || terminalMode === 'academy') ? 'edu' : 'home';
+      const memberType: 'home' | 'edu' = terminalMode === 'edu' ? 'edu' : 'home';
 
       const searchColumn = req.body.memberId ? 'id' : 'name';
       const searchValue = req.body.memberId || childName;
@@ -168,7 +168,7 @@ const PORT = Number(process.env.PORT) || 3000;
           }
         }
 
-        // Fallback: Also check if parent subscribed directly to the academy place_id
+        // Fallback: Also check if parent subscribed directly to the edu place_id
         const memberIds = [member.id];
         if (member.member_code) memberIds.push(member.member_code);
 
@@ -253,8 +253,7 @@ const PORT = Number(process.env.PORT) || 3000;
           const isHomeSubscription = homePlaceId && subInfo.place_id === homePlaceId;
           
           if (isHomeSubscription) {
-            const loginId = subInfo.member_code || member.home_member_id;
-            targetUrl = `/history/${homePlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
+            targetUrl = `/admin?autoLogin=true&placeId=${homePlaceId}`;
           } else {
             const loginId = member.member_code || member.id;
             targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
