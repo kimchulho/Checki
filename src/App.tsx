@@ -5001,6 +5001,7 @@ export default function App() {
     
     try {
       let childId: string | undefined;
+      let memberId: string | undefined;
       try {
         const { data } = await supabase
           .from(kioskSchoolInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
@@ -5008,7 +5009,8 @@ export default function App() {
           .eq('name', childName)
           .eq('place_id', kioskSchoolInfo?.id)
           .limit(1);
-        childId = kioskSchoolInfo?.mode === 'edu' ? undefined : data?.[0]?.id;
+        memberId = data?.[0]?.id;
+        childId = kioskSchoolInfo?.mode === 'edu' ? undefined : memberId;
       } catch (e) {
         console.error('Error fetching child id:', e);
       }
@@ -5049,7 +5051,13 @@ export default function App() {
       fetch(notificationUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ childName, placeId, activity_type: modeToUse })
+        body: JSON.stringify({ 
+          childName, 
+          placeId, 
+          activity_type: modeToUse,
+          memberId,
+          terminalMode: kioskSchoolInfo?.mode || 'home'
+        })
       }).then(async (res) => {
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));

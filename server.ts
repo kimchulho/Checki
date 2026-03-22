@@ -89,31 +89,26 @@ const PORT = Number(process.env.PORT) || 3000;
       // 1. Fetch member info to verify they exist and get their place_id
       let member: any = null;
       let memberError: any = null;
+      const actualTerminalMode = req.body.terminalMode || 'home';
 
-      const { data: homeMembers, error: homeError } = await supabase
-        .from('checki_members')
-        .select('id, name, place_id, member_code')
-        .eq('name', childName)
-        .eq('place_id', placeId)
-        .limit(1);
-      const homeMember = homeMembers?.[0];
-
-      if (homeMember) {
-        member = homeMember;
+      if (actualTerminalMode === 'home') {
+        const { data: homeMembers, error: homeError } = await supabase
+          .from('checki_members')
+          .select('id, name, place_id, member_code')
+          .eq('place_id', placeId)
+          .eq(req.body.memberId ? 'id' : 'name', req.body.memberId || childName)
+          .limit(1);
+        member = homeMembers?.[0];
+        memberError = homeError;
       } else {
         const { data: eduMembers, error: eduError } = await supabase
           .from('checki_edu_members')
           .select('id, name, place_id, home_member_id, member_code')
-          .eq('name', childName)
           .eq('place_id', placeId)
+          .eq(req.body.memberId ? 'id' : 'name', req.body.memberId || childName)
           .limit(1);
-        const eduMember = eduMembers?.[0];
-        
-        if (eduMember) {
-          member = eduMember;
-        } else {
-          memberError = eduError || homeError;
-        }
+        member = eduMembers?.[0];
+        memberError = eduError;
       }
 
       if (memberError || !member) {
@@ -123,43 +118,48 @@ const PORT = Number(process.env.PORT) || 3000;
 
       const targetPlaceId = member.place_id;
 
-      // 2. Fetch all subscriptions associated with this place_id (admins) and this member_code (parents)
-      const { data: adminSubscriptions, error: adminSubError } = await supabase
-        .from('checki_push_subscriptions')
-        .select('subscription')
-        .eq('place_id', targetPlaceId);
-
-      // Parent subscriptions can be linked to member.id or member.home_member_id
-      const memberIds = [member.id];
-      if (member.home_member_id) memberIds.push(member.home_member_id);
-      if (member.member_code) memberIds.push(member.member_code); // For backward compatibility
-
-      const { data: parentSubscriptions, error: parentSubError } = await supabase
-        .from('checki_push_subscriptions')
-        .select('subscription, phone_number, member_code')
-        .in('member_code', memberIds);
-
-      // If there are home subscriptions, fetch the home member to get the place_id
+      let allSubscriptions: any[] = [];
       let homePlaceId: string | null = null;
-      if (member.home_member_id && parentSubscriptions?.some(s => s.member_code === member.home_member_id)) {
-        const { data: homeMember } = await supabase
-          .from('checki_members')
-          .select('place_id')
-          .eq('id', member.home_member_id)
-          .single();
-        if (homeMember) homePlaceId = homeMember.place_id;
+
+      // 2. Fetch subscriptions based on terminal mode
+      if (actualTerminalMode === 'home') {
+        // Checki Home -> Notify Admin
+        const { data: adminSubscriptions, error: adminSubError } = await supabase
+          .from('checki_push_subscriptions')
+          .select('subscription')
+          .eq('place_id', targetPlaceId)
+          .eq('member_code', 'ADMIN'); // Ensure it's the admin subscription
+
+        if (adminSubError) throw adminSubError;
+        allSubscriptions = (adminSubscriptions || []).map(s => ({ ...s, type: 'admin' }));
+      } else if (actualTerminalMode === 'edu') {
+        // Checki Edu -> Notify Parent
+        const memberIds = [member.id];
+        if (member.home_member_id) memberIds.push(member.home_member_id);
+        if (member.member_code) memberIds.push(member.member_code); // For backward compatibility
+
+        const { data: parentSubscriptions, error: parentSubError } = await supabase
+          .from('checki_push_subscriptions')
+          .select('subscription, phone_number, member_code')
+          .in('member_code', memberIds);
+
+        if (parentSubError) throw parentSubError;
+
+        // If there are home subscriptions, fetch the home member to get the place_id
+        if (member.home_member_id && parentSubscriptions?.some(s => s.member_code === member.home_member_id)) {
+          const { data: homeMember } = await supabase
+            .from('checki_members')
+            .select('place_id')
+            .eq('id', member.home_member_id)
+            .single();
+          if (homeMember) homePlaceId = homeMember.place_id;
+        }
+
+        allSubscriptions = (parentSubscriptions || []).map(s => ({ ...s, type: 'parent' }));
       }
 
-      if (adminSubError) throw adminSubError;
-      if (parentSubError) throw parentSubError;
-
-      const allSubscriptions = [
-        ...(adminSubscriptions || []).map(s => ({ ...s, type: 'admin' })),
-        ...(parentSubscriptions || []).map(s => ({ ...s, type: 'parent' }))
-      ];
-
       if (allSubscriptions.length === 0) {
-        console.log(`No subscribers found for place_id: ${targetPlaceId} or member_code: ${member.id}`);
+        console.log(`No subscribers found for terminalMode: ${actualTerminalMode}, member: ${member.id}`);
         return res.json({ success: true, sentCount: 0 });
       }
 
