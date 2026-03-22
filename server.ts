@@ -90,22 +90,24 @@ const PORT = Number(process.env.PORT) || 3000;
       let member: any = null;
       let memberError: any = null;
 
-      const { data: homeMember, error: homeError } = await supabase
+      const { data: homeMembers, error: homeError } = await supabase
         .from('checki_members')
         .select('id, name, place_id, member_code')
         .eq('name', childName)
         .eq('place_id', placeId)
-        .single();
+        .limit(1);
+      const homeMember = homeMembers?.[0];
 
       if (homeMember) {
         member = homeMember;
       } else {
-        const { data: eduMember, error: eduError } = await supabase
+        const { data: eduMembers, error: eduError } = await supabase
           .from('checki_edu_members')
           .select('id, name, place_id, home_member_id, member_code')
           .eq('name', childName)
           .eq('place_id', placeId)
-          .single();
+          .limit(1);
+        const eduMember = eduMembers?.[0];
         
         if (eduMember) {
           member = eduMember;
@@ -130,6 +132,7 @@ const PORT = Number(process.env.PORT) || 3000;
       // Parent subscriptions can be linked to member.id or member.home_member_id
       const memberIds = [member.id];
       if (member.home_member_id) memberIds.push(member.home_member_id);
+      if (member.member_code) memberIds.push(member.member_code); // For backward compatibility
 
       const { data: parentSubscriptions, error: parentSubError } = await supabase
         .from('checki_push_subscriptions')
@@ -170,7 +173,7 @@ const PORT = Number(process.env.PORT) || 3000;
         return (lastChar - 0xAC00) % 28 > 0 ? '이가' : '가';
       };
 
-      const actionText = action || '등원';
+      const actionText = action === 'edu' ? '출석' : (action || '등원');
       const particle = getParticle(childName);
       
       const timeString = new Date().toLocaleTimeString('ko-KR', {

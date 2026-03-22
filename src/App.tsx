@@ -4997,8 +4997,8 @@ export default function App() {
           .select('id')
           .eq('name', childName)
           .eq('place_id', kioskSchoolInfo?.id)
-          .single();
-        childId = kioskSchoolInfo?.mode === 'edu' ? undefined : data?.id;
+          .limit(1);
+        childId = kioskSchoolInfo?.mode === 'edu' ? undefined : data?.[0]?.id;
       } catch (e) {
         console.error('Error fetching child id:', e);
       }
