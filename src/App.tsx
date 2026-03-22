@@ -1798,10 +1798,16 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         place_id: item.place_id
       });
 
-      // Update viewed_at status if not already set
-      if (!item.viewed_at) {
+      // Update viewed status if not already set
+      const isHomeMode = placeInfo?.mode === 'home';
+      const needsUpdate = isHomeMode 
+        ? (!item.parent_viewed_at && !(item.image_url && item.image_url.includes('|parent_viewed')))
+        : !item.viewed_at;
+
+      if (needsUpdate) {
         try {
-          const response = await fetch(`/api/attendance/${item.id}/view`, {
+          const endpoint = isHomeMode ? `/api/attendance/${item.id}/parent-view` : `/api/attendance/${item.id}/view`;
+          const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -2644,7 +2650,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                               title={item.image_url ? t('admin.photo.view') : t('admin.photo.none')}
                             >
                               <ImageIcon className="w-6 h-6" />
-                              {item.image_url && !item.viewed_at && (
+                              {item.image_url && (
+                                placeInfo?.mode === 'home' 
+                                  ? (!item.parent_viewed_at && !(item.image_url && item.image_url.includes('|parent_viewed')))
+                                  : !item.viewed_at
+                              ) && (
                                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse" />
                               )}
                             </button>
@@ -2654,7 +2664,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                                 <span className="px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-sm font-bold">
                                   {item.activity_type || t('admin.status.verified')}
                                 </span>
-                                {(item.parent_viewed_at || (item.image_url && item.image_url.includes('|parent_viewed'))) && (
+                                {placeInfo?.mode === 'edu' && (item.parent_viewed_at || (item.image_url && item.image_url.includes('|parent_viewed'))) && (
                                   <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center gap-1">
                                     <UserCheck className="w-3 h-3" />
                                     학부모 확인
