@@ -173,7 +173,14 @@ const PORT = Number(process.env.PORT) || 3000;
         return (lastChar - 0xAC00) % 28 > 0 ? '이가' : '가';
       };
 
-      const actionText = action === 'edu' ? '출석' : (action || '등원');
+      const getActionText = (action: string) => {
+        if (action === 'edu') return '출석';
+        if (action === '집' || action === '학교') return `${action}에 도착`;
+        if (action === '외출') return '외출을 시작';
+        return action || '등원';
+      };
+      
+      const actionText = getActionText(action);
       const particle = getParticle(childName);
       
       const timeString = new Date().toLocaleTimeString('ko-KR', {
@@ -203,7 +210,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
           const customPayload = {
             title: `[체키] ${childName} ${actionText} 알림`,
-            body: `${childName}${particle} ${actionText} 했어요! (${timeString})`,
+            body: `${childName}${particle} ${actionText}했어요! (${timeString})`,
             icon: '/icon.svg', // Orange square with check icon
             badge: '/badge.svg',
             url: targetUrl, // For old service workers
