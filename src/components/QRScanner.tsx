@@ -49,7 +49,7 @@ export function QRScanner({ onScan, onClose }: QRScannerProps) {
       
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
         const canvasElement = canvasRef.current;
-        const canvas = canvasElement?.getContext('2d');
+        const canvas = canvasElement?.getContext('2d', { willReadFrequently: true });
 
         if (canvasElement && canvas) {
           canvasElement.height = videoRef.current.videoHeight;

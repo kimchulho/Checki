@@ -89,26 +89,37 @@ const PORT = Number(process.env.PORT) || 3000;
       // 1. Fetch member info to verify they exist and get their place_id
       let member: any = null;
       let memberError: any = null;
-      const actualTerminalMode = req.body.terminalMode || 'home';
+      let memberType: 'home' | 'edu' = 'home';
 
-      if (actualTerminalMode === 'home') {
-        const { data: homeMembers, error: homeError } = await supabase
-          .from('checki_members')
-          .select('id, name, place_id, member_code')
-          .eq('place_id', placeId)
-          .eq(req.body.memberId ? 'id' : 'name', req.body.memberId || childName)
-          .limit(1);
-        member = homeMembers?.[0];
-        memberError = homeError;
+      const searchColumn = req.body.memberId ? 'id' : 'name';
+      const searchValue = req.body.memberId || childName;
+
+      const { data: homeMembers, error: homeError } = await supabase
+        .from('checki_members')
+        .select('id, name, place_id, member_code')
+        .eq('place_id', placeId)
+        .eq(searchColumn, searchValue)
+        .limit(1);
+      const homeMember = homeMembers?.[0];
+
+      if (homeMember) {
+        member = homeMember;
+        memberType = 'home';
       } else {
         const { data: eduMembers, error: eduError } = await supabase
           .from('checki_edu_members')
           .select('id, name, place_id, home_member_id, member_code')
           .eq('place_id', placeId)
-          .eq(req.body.memberId ? 'id' : 'name', req.body.memberId || childName)
+          .eq(searchColumn, searchValue)
           .limit(1);
-        member = eduMembers?.[0];
-        memberError = eduError;
+        const eduMember = eduMembers?.[0];
+        
+        if (eduMember) {
+          member = eduMember;
+          memberType = 'edu';
+        } else {
+          memberError = eduError || homeError;
+        }
       }
 
       if (memberError || !member) {
@@ -121,8 +132,8 @@ const PORT = Number(process.env.PORT) || 3000;
       let allSubscriptions: any[] = [];
       let homePlaceId: string | null = null;
 
-      // 2. Fetch subscriptions based on terminal mode
-      if (actualTerminalMode === 'home') {
+      // 2. Fetch subscriptions based on member type
+      if (memberType === 'home') {
         // Checki Home -> Notify Admin
         const { data: adminSubscriptions, error: adminSubError } = await supabase
           .from('checki_push_subscriptions')
@@ -132,7 +143,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
         if (adminSubError) throw adminSubError;
         allSubscriptions = (adminSubscriptions || []).map(s => ({ ...s, type: 'admin' }));
-      } else if (actualTerminalMode === 'edu') {
+      } else if (memberType === 'edu') {
         // Checki Edu -> Notify Parent
         const memberIds = [member.id];
         if (member.home_member_id) memberIds.push(member.home_member_id);
