@@ -89,22 +89,21 @@ const PORT = Number(process.env.PORT) || 3000;
       // 1. Fetch member info to verify they exist and get their place_id
       let member: any = null;
       let memberError: any = null;
-      let memberType: 'home' | 'edu' = 'home';
+      const terminalMode = req.body.terminalMode || 'home';
+      const memberType: 'home' | 'edu' = terminalMode === 'edu' ? 'edu' : 'home';
 
       const searchColumn = req.body.memberId ? 'id' : 'name';
       const searchValue = req.body.memberId || childName;
 
-      const { data: homeMembers, error: homeError } = await supabase
-        .from('checki_members')
-        .select('id, name, place_id, member_code')
-        .eq('place_id', placeId)
-        .eq(searchColumn, searchValue)
-        .limit(1);
-      const homeMember = homeMembers?.[0];
-
-      if (homeMember) {
-        member = homeMember;
-        memberType = 'home';
+      if (memberType === 'home') {
+        const { data: homeMembers, error: homeError } = await supabase
+          .from('checki_members')
+          .select('id, name, place_id, member_code')
+          .eq('place_id', placeId)
+          .eq(searchColumn, searchValue)
+          .limit(1);
+        member = homeMembers?.[0];
+        memberError = homeError;
       } else {
         const { data: eduMembers, error: eduError } = await supabase
           .from('checki_edu_members')
@@ -112,18 +111,12 @@ const PORT = Number(process.env.PORT) || 3000;
           .eq('place_id', placeId)
           .eq(searchColumn, searchValue)
           .limit(1);
-        const eduMember = eduMembers?.[0];
-        
-        if (eduMember) {
-          member = eduMember;
-          memberType = 'edu';
-        } else {
-          memberError = eduError || homeError;
-        }
+        member = eduMembers?.[0];
+        memberError = eduError;
       }
 
       if (memberError || !member) {
-        console.warn(`Member not found for notification: ${childName} at place ${placeId}`);
+        console.warn(`Member not found for notification: ${childName} at place ${placeId} in mode ${memberType}`);
         return res.status(404).json({ error: "Member not found" });
       }
 
