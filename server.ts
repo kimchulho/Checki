@@ -98,7 +98,7 @@ const PORT = Number(process.env.PORT) || 3000;
       if (memberType === 'home') {
         const { data: homeMembers, error: homeError } = await supabase
           .from('checki_members')
-          .select('id, name, place_id, member_code')
+          .select('id, name, place_id')
           .eq('place_id', placeId)
           .eq(searchColumn, searchValue)
           .limit(1);
@@ -117,7 +117,11 @@ const PORT = Number(process.env.PORT) || 3000;
 
       if (memberError || !member) {
         console.warn(`Member not found for notification: ${childName} at place ${placeId} in mode ${memberType}`);
-        return res.status(404).json({ error: "Member not found" });
+        console.warn(`Search params: column=${searchColumn}, value=${searchValue}`);
+        if (memberError) {
+          console.error(`Supabase Error:`, memberError);
+        }
+        return res.status(404).json({ error: "Member not found", details: memberError || "No matching record found" });
       }
 
       const targetPlaceId = member.place_id;
