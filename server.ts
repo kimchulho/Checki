@@ -212,38 +212,73 @@ const PORT = Number(process.env.PORT) || 3000;
         second: '2-digit'
       });
       
-      const results = await Promise.allSettled(
-        allSubscriptions.map(subInfo => {
-          let targetUrl = '/';
-          if (subInfo.type === 'admin') {
-            targetUrl = `/admin?autoLogin=true&placeId=${targetPlaceId}`;
-          } else if (subInfo.type === 'parent') {
-            // Check if this subscription belongs to the home member
-            const isHomeSubscription = member.home_member_id && subInfo.member_code === member.home_member_id;
-            
-            if (isHomeSubscription && homePlaceId) {
-              targetUrl = `/history/${homePlaceId}?autoLogin=true&id=${member.home_member_id}&key=${subInfo.phone_number}`;
-            } else {
-              const loginId = member.member_code || member.id;
-              targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
-            }
+      const preparedNotifications = allSubscriptions.map(subInfo => {
+        let targetUrl = '/';
+        if (subInfo.type === 'admin') {
+          targetUrl = `/admin?autoLogin=true&placeId=${targetPlaceId}`;
+        } else if (subInfo.type === 'parent') {
+          // Check if this subscription belongs to the home member
+          const isHomeSubscription = member.home_member_id && subInfo.member_code === member.home_member_id;
+          
+          if (isHomeSubscription && homePlaceId) {
+            targetUrl = `/history/${homePlaceId}?autoLogin=true&id=${member.home_member_id}&key=${subInfo.phone_number}`;
+          } else {
+            const loginId = member.member_code || member.id;
+            targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
           }
+        }
 
-          const customPayload = {
-            title: `[체키] ${childName} ${actionText} 알림`,
-            body: `${childName}${particle} ${actionText}했어요! (${timeString})`,
-            icon: '/icon.svg', // Orange square with check icon
-            badge: '/badge.svg',
-            url: targetUrl, // For old service workers
-            data: { url: targetUrl }, // For new service workers
-            timestamp: Date.now(),
-            tag: `attendance-${subInfo.type}-${childName}` // Unique tag per type so they don't overwrite
-          };
+        const customPayload = {
+          title: `[체키] ${childName} ${actionText} 알림`,
+          body: `${childName}${particle} ${actionText}했어요! (${timeString})`,
+          icon: '/icon.svg', // Orange square with check icon
+          badge: '/badge.svg',
+          url: targetUrl, // For old service workers
+          data: { url: targetUrl }, // For new service workers
+          timestamp: Date.now(),
+          tag: `attendance-${subInfo.type}-${childName}` // Unique tag per type so they don't overwrite
+        };
 
-          const sub = typeof subInfo.subscription === 'string' ? JSON.parse(subInfo.subscription) : subInfo.subscription;
-          return webpush.sendNotification(sub, JSON.stringify(customPayload));
-        })
+        const sub = typeof subInfo.subscription === 'string' ? JSON.parse(subInfo.subscription) : subInfo.subscription;
+        return { subInfo, sub, targetUrl, customPayload };
+      });
+
+      const results = await Promise.allSettled(
+        preparedNotifications.map(n => webpush.sendNotification(n.sub, JSON.stringify(n.customPayload)))
       );
+
+      // Log push notification history to database
+      const historyRecords = preparedNotifications.map((n, index) => {
+        const result = results[index];
+        const isSuccess = result.status === 'fulfilled';
+        const errorMessage = result.status === 'rejected' ? (result.reason?.message || String(result.reason)) : null;
+
+        return {
+          place_id: targetPlaceId,
+          child_name: childName,
+          member_id: member.id,
+          activity_type: action,
+          terminal_mode: terminalMode,
+          recipient_type: n.subInfo.type,
+          recipient_member_code: n.subInfo.member_code || 'ADMIN',
+          recipient_phone_number: n.subInfo.phone_number || null,
+          notification_title: n.customPayload.title,
+          notification_body: n.customPayload.body,
+          target_url: n.targetUrl,
+          status: isSuccess ? 'success' : 'failed',
+          error_message: errorMessage
+        };
+      });
+
+      if (historyRecords.length > 0) {
+        const { error: historyError } = await supabase
+          .from('checki_push_history')
+          .insert(historyRecords);
+          
+        if (historyError) {
+          console.error("Failed to insert push history:", historyError);
+        }
+      }
 
       res.json({ 
         success: true, 
