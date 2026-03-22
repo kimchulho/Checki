@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Routes, Route, useNavigate, useLocation, Link, useSearchParams, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff, Smartphone, Link2 } from 'lucide-react';
+import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff, Smartphone, Link2, Home, School, Building } from 'lucide-react';
 import { encryptBlob, uploadAttendanceData, decryptBlob } from './services/securityService';
 import { supabase } from './services/supabaseClient';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -315,7 +315,7 @@ function AttendanceView({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [touchPosition, setTouchPosition] = useState({ x: 0, y: 0 });
-  const appTitle = kioskSchoolInfo?.mode === 'edu' ? '체키 에듀' : kioskSchoolInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
+  const appTitle = '체키';
   const [childrenList, setChildrenList] = useState<any[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -640,8 +640,11 @@ function AttendanceView({
             <Check className="text-white w-6 h-6" strokeWidth={3} />
           </div>
           <div>
-            <h1 className="font-sans text-2xl font-bold text-orange-600 leading-tight">
+            <h1 className="font-sans text-2xl font-bold text-orange-600 leading-tight flex items-center gap-1.5">
               {appTitle}
+              {kioskSchoolInfo?.mode === 'edu' && <School className="w-5 h-5" />}
+              {kioskSchoolInfo?.mode === 'home' && <Home className="w-5 h-5" />}
+              {kioskSchoolInfo?.mode === 'business' && <Building className="w-5 h-5" />}
             </h1>
             <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{terminalName || appTitle}</p>
           </div>
@@ -1579,17 +1582,10 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
   const placeInfoStr = localStorage.getItem('checki_admin_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
-  const appTitle = placeInfo?.mode === 'edu' ? '체키 에듀' : placeInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
-  const headerTitle = placeInfo?.mode === 'edu' ? '체키 에듀 관리자' : placeInfo?.mode === 'business' ? '체키 비즈 관리자' : t('admin.title');
+  const appTitle = '체키';
 
   useEffect(() => {
-    if (placeInfo?.mode === 'edu') {
-      document.title = '체키 에듀 관리자';
-    } else if (placeInfo?.mode === 'business') {
-      document.title = '체키 비즈 관리자';
-    } else {
-      document.title = '체키 관리자';
-    }
+    document.title = '체키';
   }, [placeInfo?.mode]);
 
   useEffect(() => {
@@ -2290,7 +2286,12 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 <Check className="text-white w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-800">{headerTitle}</h1>
+                <h1 className="text-xl font-bold text-slate-800 flex items-center gap-1.5">
+                  {appTitle}
+                  {placeInfo?.mode === 'edu' && <School className="w-5 h-5 text-slate-400" />}
+                  {placeInfo?.mode === 'home' && <Home className="w-5 h-5 text-slate-400" />}
+                  {placeInfo?.mode === 'business' && <Building className="w-5 h-5 text-slate-400" />}
+                </h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -3666,7 +3667,7 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
 
   const placeInfoStr = localStorage.getItem('checki_kiosk_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
-  const appTitle = placeInfo?.mode === 'edu' ? '체키 에듀' : placeInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
+  const appTitle = '체키';
 
   useEffect(() => {
     isMounted.current = true;
@@ -3790,7 +3791,7 @@ function HistoryView() {
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; time: string } | null>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [placeInfo, setPlaceInfo] = useState<any>(null);
-  const appTitle = placeInfo?.mode === 'edu' ? '체키 에듀' : placeInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
+  const appTitle = '체키';
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -4590,7 +4591,7 @@ export default function App() {
   const [terminalName, setTerminalName] = useState<string>('');
   const [terminalActivities, setTerminalActivities] = useState<string[]>(['집', '학교', '외출']);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const appTitle = kioskSchoolInfo?.mode === 'edu' ? '체키 에듀' : kioskSchoolInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
+  const appTitle = '체키';
 
   const getModeOptions = () => {
     return [
@@ -4622,15 +4623,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (location.pathname.startsWith('/admin')) {
-      const placeInfoStr = localStorage.getItem('checki_admin_place_info');
-      const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
-      document.title = placeInfo?.mode === 'edu' ? '체키 에듀' : '체키';
-    } else if (location.pathname.startsWith('/kiosk')) {
-      document.title = kioskSchoolInfo?.mode === 'edu' ? '체키 에듀' : '체키';
-    } else {
-      document.title = '체키';
-    }
+    document.title = '체키';
   }, [location.pathname, kioskSchoolInfo?.mode]);
 
   useEffect(() => {
