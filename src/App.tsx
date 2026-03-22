@@ -1794,7 +1794,8 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         url,
         name: item.student?.name || t('admin.messages.unregistered_member'),
         time: new Date(item.timestamp).toLocaleString(dateLocale),
-        imagePath
+        imagePath,
+        place_id: item.place_id
       });
 
       // Update viewed_at status if not already set
@@ -1826,7 +1827,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/attendance/${selectedPhoto.id}/photo`, {
+      const response = await fetch(`/api/attendance/${selectedPhoto.id}/photo?placeId=${placeInfo?.id}`, {
         method: 'DELETE'
       });
       
@@ -2030,7 +2031,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/attendance/${deletingRecordId}`, {
+      const response = await fetch(`/api/attendance/${deletingRecordId}?placeId=${placeInfo?.id}`, {
         method: 'DELETE'
       });
       
@@ -2653,6 +2654,12 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                                 <span className="px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-sm font-bold">
                                   {item.activity_type || t('admin.status.verified')}
                                 </span>
+                                {item.parent_viewed_at && (
+                                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center gap-1">
+                                    <UserCheck className="w-3 h-3" />
+                                    학부모 확인
+                                  </span>
+                                )}
                               </div>
                               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 font-medium">
                                 <span className="flex items-center gap-1">
@@ -2682,13 +2689,15 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                               </div>
                             </div>
                           </div>
-                          <button
-                            onClick={() => setDeletingRecordId(item.id)}
-                            className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shrink-0 ml-auto"
-                            title={t('common.photo_modal.delete')}
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                          {item.place_id === placeInfo?.id && (
+                            <button
+                              onClick={() => setDeletingRecordId(item.id)}
+                              className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all shrink-0 ml-auto"
+                              title={t('common.photo_modal.delete')}
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          )}
                         </motion.div>
                       ))}
                     </div>
@@ -3376,18 +3385,20 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   <span>{t('common.photo_modal.secure_msg')}</span>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button 
-                    onClick={deletePhoto}
-                    disabled={isSaving}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold text-sm hover:bg-red-100 transition-all disabled:opacity-50"
-                  >
-                    {isSaving ? (
-                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                    {t('common.photo_modal.delete')}
-                  </button>
+                  {selectedPhoto.place_id === placeInfo?.id && (
+                    <button 
+                      onClick={deletePhoto}
+                      disabled={isSaving}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold text-sm hover:bg-red-100 transition-all disabled:opacity-50"
+                    >
+                      {isSaving ? (
+                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      {t('common.photo_modal.delete')}
+                    </button>
+                  )}
                   <button 
                     onClick={savePhoto}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
@@ -3824,12 +3835,20 @@ function HistoryView() {
 
       // 1. Verify student and parent contact
       const targetTable = currentPlaceInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members';
-      const { data: memberData, error: memberError } = await supabase
+      
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      let memberQuery = supabase
         .from(targetTable)
         .select('*')
-        .eq('member_code', id)
-        .eq('place_id', targetPlaceId)
-        .single();
+        .eq('place_id', targetPlaceId);
+        
+      if (isUuid) {
+        memberQuery = memberQuery.or(`member_code.eq.${id},id.eq.${id}`);
+      } else {
+        memberQuery = memberQuery.eq('member_code', id);
+      }
+      
+      const { data: memberData, error: memberError } = await memberQuery.single();
 
       if (memberError || !memberData) {
         if (localStorage.getItem('checki_parent_auth')) {
@@ -4153,16 +4172,16 @@ function HistoryView() {
     if (!item.image_url) return;
 
     // Mark as viewed if not already viewed
-    if (!item.viewed_at) {
+    if (!item.parent_viewed_at && !item.viewed_at) {
       const now = new Date().toISOString();
       
       // Optimistic update
       setAttendance(prev => prev.map(record => 
-        record.id === item.id ? { ...record, viewed_at: now } : record
+        record.id === item.id ? { ...record, parent_viewed_at: now, viewed_at: now } : record
       ));
 
       // Background DB update via server API (bypasses RLS)
-      fetch(`/api/attendance/${item.id}/view`, { method: 'POST' })
+      fetch(`/api/attendance/${item.id}/parent-view`, { method: 'POST' })
         .then(res => {
           if (!res.ok) throw new Error('Failed to update viewed status');
         })

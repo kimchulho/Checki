@@ -75,7 +75,7 @@ const PORT = Number(process.env.PORT) || 3000;
     const { childName, placeId, activity_type, mode } = req.body;
     const action = activity_type || mode; // Support both for backward compatibility
 
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin() || getSupabase();
 
     if (!supabase) {
       return res.status(500).json({ error: "Supabase not configured" });
@@ -92,7 +92,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       const { data: homeMember, error: homeError } = await supabase
         .from('checki_members')
-        .select('id, name, place_id')
+        .select('id, name, place_id, member_code')
         .eq('name', childName)
         .eq('place_id', placeId)
         .single();
@@ -102,7 +102,7 @@ const PORT = Number(process.env.PORT) || 3000;
       } else {
         const { data: eduMember, error: eduError } = await supabase
           .from('checki_edu_members')
-          .select('id, name, place_id, home_member_id')
+          .select('id, name, place_id, home_member_id, member_code')
           .eq('name', childName)
           .eq('place_id', placeId)
           .single();
@@ -192,7 +192,8 @@ const PORT = Number(process.env.PORT) || 3000;
           if (subInfo.type === 'admin') {
             targetUrl = `/admin?autoLogin=true&placeId=${targetPlaceId}`;
           } else if (subInfo.type === 'parent') {
-            targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${member.id}&key=${subInfo.phone_number}`;
+            const loginId = member.member_code || member.id;
+            targetUrl = `/history/${targetPlaceId}?autoLogin=true&id=${loginId}&key=${subInfo.phone_number}`;
           }
 
           const customPayload = {
@@ -860,24 +861,63 @@ const PORT = Number(process.env.PORT) || 3000;
     }
   });
 
+  app.post("/api/attendance/:id/parent-view", async (req, res) => {
+    const { id } = req.params;
+    const supabase = getSupabaseAdmin();
+
+    if (!supabase) {
+      return res.status(500).json({ error: "Server configuration error: Missing Service Role Key" });
+    }
+
+    try {
+      const { error } = await supabase
+        .from('checki_history')
+        .update({ parent_viewed_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) {
+        // Fallback if parent_viewed_at doesn't exist
+        console.warn("parent_viewed_at column might not exist, falling back to viewed_at");
+        await supabase
+          .from('checki_history')
+          .update({ viewed_at: new Date().toISOString() })
+          .eq('id', id);
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error updating parent_viewed_at:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.delete("/api/attendance/:id", async (req, res) => {
     const { id } = req.params;
+    const { placeId } = req.query;
     const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return res.status(500).json({ error: "Server configuration error" });
     }
 
+    if (!placeId) {
+      return res.status(400).json({ error: "placeId is required" });
+    }
+
     try {
       // 1. Get the image path first
       const { data: item, error: fetchError } = await supabase
         .from('checki_history')
-        .select('image_url')
+        .select('image_url, place_id')
         .eq('id', id)
         .single();
 
       if (fetchError || !item) {
         return res.status(404).json({ error: "Record not found" });
+      }
+
+      if (item.place_id !== placeId) {
+        return res.status(403).json({ error: "Unauthorized to delete this record" });
       }
 
       // 2. Delete from storage if photo exists
@@ -912,22 +952,31 @@ const PORT = Number(process.env.PORT) || 3000;
 
   app.delete("/api/attendance/:id/photo", async (req, res) => {
     const { id } = req.params;
+    const { placeId } = req.query;
     const supabase = getSupabaseAdmin();
 
     if (!supabase) {
       return res.status(500).json({ error: "Server configuration error" });
     }
 
+    if (!placeId) {
+      return res.status(400).json({ error: "placeId is required" });
+    }
+
     try {
       // 1. Get the image path first
       const { data: item, error: fetchError } = await supabase
         .from('checki_history')
-        .select('image_url')
+        .select('image_url, place_id')
         .eq('id', id)
         .single();
 
       if (fetchError || !item) {
         return res.status(404).json({ error: "Record not found" });
+      }
+
+      if (item.place_id !== placeId) {
+        return res.status(403).json({ error: "Unauthorized to delete this photo" });
       }
 
       if (item.image_url) {
