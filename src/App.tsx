@@ -923,8 +923,8 @@ function AttendanceView({
                       className="w-full flex flex-col gap-2"
                     >
                       <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
-                        {[customActivity || t('terminal.modes.manual'), ...terminalActivities].map((activity: string, index: number) => {
-                          const totalActivities = terminalActivities.length + 1;
+                        {(kioskSchoolInfo?.mode === 'edu' ? terminalActivities : [customActivity || t('terminal.modes.manual'), ...terminalActivities]).map((activity: string, index: number) => {
+                          const totalActivities = kioskSchoolInfo?.mode === 'edu' ? terminalActivities.length : terminalActivities.length + 1;
                           let activityWidthClass = '';
                           if (totalActivities === 1) {
                             activityWidthClass = 'w-full';
@@ -933,7 +933,7 @@ function AttendanceView({
                           } else {
                             activityWidthClass = 'w-[calc(33.333%-0.5rem)]';
                           }
-                          const isManual = index === 0;
+                          const isManual = kioskSchoolInfo?.mode !== 'edu' && index === 0;
                           const isSelected = selectedActivityToConfirm === activity;
                           return (
                             <button
@@ -1876,15 +1876,15 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
           const homeMemberIds = students.map(s => s.id);
           const { data: linkedEduMembers } = await supabase
             .from('checki_edu_members')
-            .select('id, home_member_id')
+            .select('id, name, home_member_id')
             .in('home_member_id', homeMemberIds);
           
           if (linkedEduMembers && linkedEduMembers.length > 0) {
-            const eduMemberIds = linkedEduMembers.map(s => {
-              if (s.home_member_id) eduToHomeMap[s.id] = s.home_member_id;
-              return s.id;
+            const eduMemberNames = linkedEduMembers.map(s => {
+              if (s.home_member_id) eduToHomeMap[s.name] = s.home_member_id;
+              return s.name;
             });
-            historyQuery = historyQuery.or(`place_id.eq.${placeId},child_id.in.(${eduMemberIds.join(',')})`);
+            historyQuery = historyQuery.or(`place_id.eq.${placeId},child_name.in.(${eduMemberNames.join(',')})`);
           } else if (placeId) {
             historyQuery = historyQuery.eq('place_id', placeId);
           }
@@ -1905,7 +1905,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         const lastActivity = history.find(h => 
           h.child_id === student.id || 
           h.child_name === student.name || 
-          (h.child_id && eduToHomeMap[h.child_id] === student.id)
+          (h.child_name && eduToHomeMap[h.child_name] === student.id)
         );
         return {
           ...student,
@@ -3744,12 +3744,19 @@ function HistoryView() {
       setStudentInfo({ ...memberData, placeName: currentPlaceInfo?.name || '' });
 
       // 2. Fetch attendance
-      const { data: attendanceData, error: attendanceError } = await supabase
+      let attendanceQuery = supabase
         .from('checki_history')
         .select('*')
-        .eq('child_id', memberData.id)
         .eq('place_id', targetPlaceId)
         .order('timestamp', { ascending: false });
+        
+      if (currentPlaceInfo?.mode === 'edu') {
+        attendanceQuery = attendanceQuery.eq('child_name', memberData.name);
+      } else {
+        attendanceQuery = attendanceQuery.eq('child_id', memberData.id);
+      }
+      
+      const { data: attendanceData, error: attendanceError } = await attendanceQuery;
 
       if (attendanceError) throw attendanceError;
       setAttendance(attendanceData || []);
@@ -4673,11 +4680,13 @@ export default function App() {
 
         if (linkedEduMembers && linkedEduMembers.length > 0) {
           allStudentsData = [...allStudentsData, ...linkedEduMembers];
-          const eduMemberIds = linkedEduMembers.map(s => s.id);
+          const eduMemberNames = linkedEduMembers.map(s => s.name);
+          const eduPlaceIds = [...new Set(linkedEduMembers.map(s => s.place_id))];
           const { data: eduAttendance } = await supabase
             .from('checki_history')
             .select('*')
-            .in('child_id', eduMemberIds)
+            .in('child_name', eduMemberNames)
+            .in('place_id', eduPlaceIds)
             .order('timestamp', { ascending: false });
 
           if (eduAttendance) {
@@ -4850,7 +4859,7 @@ export default function App() {
           .eq('name', childName)
           .eq('place_id', kioskSchoolInfo?.id)
           .single();
-        childId = data?.id;
+        childId = kioskSchoolInfo?.mode === 'edu' ? undefined : data?.id;
       } catch (e) {
         console.error('Error fetching child id:', e);
       }

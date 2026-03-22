@@ -119,7 +119,7 @@ export async function uploadAttendanceData(
       .insert([
         { 
           child_name: childName, 
-          child_id: childId,
+          child_id: childId || null, // Ensure it's null if not provided or if it's an edu member (handled by caller)
           image_url: combinedUrl,
           place_id: placeId,
           activity_type: activityType,
