@@ -176,7 +176,8 @@ const resources = {
           "settings": "설정",
           "notifications": "알림",
           "subscription": "구독",
-          "language": "언어"
+          "language": "언어",
+          "copy_guest_link": "비회원 조회 링크 복사"
         },
         "search": {
           "all": "전체"
@@ -211,6 +212,7 @@ const resources = {
           "edit_member_error": "수정 실패",
           "no_place_info": "기관 정보를 찾을 수 없습니다. 다시 로그인해주세요.",
           "unregistered_member": "미등록 멤버",
+          "copy_link_success": "비회원 조회 링크가 복사되었습니다.",
           "delete_success": "삭제되었습니다.",
           "delete_error": "삭제 실패",
           "registration_date": "등록일",
@@ -562,7 +564,8 @@ const resources = {
           "settings": "Settings",
           "notifications": "Notifications",
           "subscription": "Subscription",
-          "language": "Language"
+          "language": "Language",
+          "copy_guest_link": "Copy Guest Link"
         },
         "search": {
           "all": "All"
@@ -597,6 +600,7 @@ const resources = {
           "edit_member_error": "Failed to update.",
           "no_place_info": "Place info not found. Please log in again.",
           "unregistered_member": "Unregistered Member",
+          "copy_link_success": "Guest lookup link copied to clipboard.",
           "delete_success": "Deleted successfully.",
           "delete_error": "Failed to delete.",
           "registration_date": "Registration Date",
@@ -948,7 +952,8 @@ const resources = {
           "settings": "設定",
           "notifications": "通知",
           "subscription": "購読",
-          "language": "言語"
+          "language": "言語",
+          "copy_guest_link": "ゲスト照会リンクをコピー"
         },
         "search": {
           "all": "全て"
@@ -983,6 +988,7 @@ const resources = {
           "edit_member_error": "修正に失敗しました。",
           "no_place_info": "機関情報が見つかりません。再度ログインしてください。",
           "unregistered_member": "未登録メンバー",
+          "copy_link_success": "ゲスト照会リンクがコピーされました。",
           "delete_success": "削除されました。",
           "delete_error": "削除に失敗しました。",
           "registration_date": "登録日",
