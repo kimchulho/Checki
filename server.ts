@@ -163,7 +163,7 @@ const PORT = Number(process.env.PORT) || 3000;
       }
 
       if (allSubscriptions.length === 0) {
-        console.log(`No subscribers found for terminalMode: ${actualTerminalMode}, member: ${member.id}`);
+        console.log(`No subscribers found for terminalMode: ${terminalMode}, member: ${member.id}`);
         return res.json({ success: true, sentCount: 0 });
       }
 
