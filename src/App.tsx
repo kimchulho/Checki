@@ -825,8 +825,26 @@ function AttendanceView({
                       </div>
 
                       {/* Keypad Buttons */}
-                      <div className="grid grid-cols-3 gap-3 w-full">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                      <div className="grid grid-cols-4 gap-3 w-full">
+                        {/* Row 1 */}
+                        {[1, 2, 3].map((num) => (
+                          <button
+                            key={num}
+                            onClick={() => handleKeypadPress(num.toString())}
+                            className="h-16 bg-white border border-slate-100 rounded-2xl text-2xl font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm"
+                          >
+                            {num}
+                          </button>
+                        ))}
+                        <button
+                          onClick={handleKeypadDelete}
+                          className="h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-500 hover:bg-slate-100 active:scale-95 transition-all shadow-sm"
+                        >
+                          <Delete className="w-6 h-6" />
+                        </button>
+
+                        {/* Row 2 */}
+                        {[4, 5, 6].map((num) => (
                           <button
                             key={num}
                             onClick={() => handleKeypadPress(num.toString())}
@@ -841,18 +859,17 @@ function AttendanceView({
                         >
                           초기화
                         </button>
-                        <button
-                          onClick={() => handleKeypadPress('0')}
-                          className="h-16 bg-white border border-slate-100 rounded-2xl text-2xl font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm"
-                        >
-                          0
-                        </button>
-                        <button
-                          onClick={handleKeypadDelete}
-                          className="h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-500 hover:bg-slate-100 active:scale-95 transition-all shadow-sm"
-                        >
-                          <Delete className="w-6 h-6" />
-                        </button>
+
+                        {/* Row 3 */}
+                        {[7, 8, 9, 0].map((num) => (
+                          <button
+                            key={num}
+                            onClick={() => handleKeypadPress(num.toString())}
+                            className="h-16 bg-white border border-slate-100 rounded-2xl text-2xl font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm"
+                          >
+                            {num}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   ) : (
