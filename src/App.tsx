@@ -148,7 +148,7 @@ function LandingPage() {
           <span className="inline-block px-4 py-1.5 bg-orange-100 text-orange-600 rounded-full text-sm font-bold mb-6">
             {t('landing.badge')}
           </span>
-          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-slate-900 mb-8 leading-[1.25] tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 mb-8 leading-[1.25] tracking-tight">
             {t('landing.hero_title_1')}<br />
             <span className="text-orange-500">{t('landing.hero_title_2')}</span>
           </h1>
@@ -640,13 +640,13 @@ function AttendanceView({
             <Check className="text-white w-6 h-6" strokeWidth={3} />
           </div>
           <div>
-            <h1 className="font-sans text-2xl font-bold text-orange-600 leading-tight flex items-center gap-1.5">
+            <h1 className="font-sans text-xl font-bold text-slate-800 leading-tight flex items-center gap-1.5">
               {appTitle}
-              {kioskSchoolInfo?.mode === 'edu' && <School className="w-5 h-5" />}
-              {kioskSchoolInfo?.mode === 'home' && <Home className="w-5 h-5" />}
-              {kioskSchoolInfo?.mode === 'business' && <Building className="w-5 h-5" />}
+              {kioskSchoolInfo?.mode === 'edu' && <School className="w-5 h-5 text-slate-400" />}
+              {kioskSchoolInfo?.mode === 'home' && <Home className="w-5 h-5 text-slate-400" />}
+              {kioskSchoolInfo?.mode === 'business' && <Building className="w-5 h-5 text-slate-400" />}
             </h1>
-            <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{terminalName || appTitle}</p>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{terminalName || appTitle}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -809,8 +809,8 @@ function AttendanceView({
                       <div className="relative flex gap-3 justify-center mb-2 mt-2">
                         {keypadInput.length === 0 && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 w-full h-full">
-                            <h3 className="text-xl font-bold text-slate-800 drop-shadow-sm">출석 번호 입력</h3>
-                            <p className="text-slate-500 text-sm mt-1 font-medium drop-shadow-sm">4자리 번호를 입력해주세요</p>
+                            <h3 className="text-xl font-bold text-slate-800 drop-shadow-sm">{t('terminal.enter_attendance_number')}</h3>
+                            <p className="text-slate-500 text-sm mt-1 font-medium drop-shadow-sm">{t('terminal.enter_4_digit_number')}</p>
                           </div>
                         )}
                         {[0, 1, 2, 3].map((index) => (
