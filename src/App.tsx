@@ -860,7 +860,7 @@ function AttendanceView({
                           onClick={() => setKeypadInput('')}
                           className="h-16 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-100 active:scale-95 transition-all shadow-sm"
                         >
-                          초기화
+                          {t('terminal.clear')}
                         </button>
 
                         {/* Row 3 */}
