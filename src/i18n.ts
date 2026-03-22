@@ -318,6 +318,7 @@ const resources = {
         "footer": "체키 대시보드 • 보안 출석 시스템"
       },
       "terminal": {
+        "selected_member": "선택된 원생",
         "clear": "초기화",
         "enter_attendance_number": "출석 번호 입력",
         "enter_4_digit_number": "4자리 번호를 입력해주세요",
@@ -709,6 +710,7 @@ const resources = {
         "footer": "Checki Dashboard • Secure Attendance System"
       },
       "terminal": {
+        "selected_member": "Selected member",
         "clear": "Clear",
         "enter_attendance_number": "Enter Attendance Number",
         "enter_4_digit_number": "Please enter a 4-digit number",
@@ -1084,6 +1086,7 @@ const resources = {
         "footer": "チェキダッシュボード • 安全な出席システム"
       },
       "terminal": {
+        "selected_member": "選択されたメンバー",
         "clear": "クリア",
         "enter_attendance_number": "出席番号を入力",
         "enter_4_digit_number": "4桁の番号を入力してください",

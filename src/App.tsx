@@ -883,7 +883,7 @@ function AttendanceView({
                             <User className="w-5 h-5" />
                           </div>
                           <div>
-                            <p className="text-sm text-orange-600 font-medium">선택된 원생</p>
+                            <p className="text-sm text-orange-600 font-medium">{t('terminal.selected_member')}</p>
                             <p className="text-lg font-bold text-slate-800">{pendingChildName}</p>
                           </div>
                         </div>
@@ -894,7 +894,7 @@ function AttendanceView({
                           }}
                           className="px-4 py-2 bg-white text-slate-600 rounded-xl text-sm font-bold shadow-sm border border-slate-200 hover:bg-slate-50"
                         >
-                          다시 입력
+                          {t('terminal.messages.cancel')}
                         </button>
                       </div>
                     </div>
@@ -1008,13 +1008,13 @@ function AttendanceView({
                         }}
                         className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
                       >
-                        취소
+                        {t('terminal.messages.cancel')}
                       </button>
                       <button
                         onClick={confirmActivity}
                         className="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-200"
                       >
-                        확인
+                        {t('terminal.messages.confirm')}
                       </button>
                     </motion.div>
                   )}
