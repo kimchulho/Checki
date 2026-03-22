@@ -90,7 +90,7 @@ const PORT = Number(process.env.PORT) || 3000;
       let member: any = null;
       let memberError: any = null;
       const terminalMode = req.body.terminalMode || 'home';
-      const memberType: 'home' | 'edu' = terminalMode === 'edu' ? 'edu' : 'home';
+      const memberType: 'home' | 'edu' = (terminalMode === 'edu' || terminalMode === 'academy') ? 'edu' : 'home';
 
       const searchColumn = req.body.memberId ? 'id' : 'name';
       const searchValue = req.body.memberId || childName;
@@ -141,17 +141,27 @@ const PORT = Number(process.env.PORT) || 3000;
         if (adminSubError) throw adminSubError;
         allSubscriptions = (adminSubscriptions || []).map(s => ({ ...s, type: 'admin' }));
       } else if (memberType === 'edu') {
-        // Checki Edu -> Notify Parent
+        // Checki Edu -> Notify Parent and Admin
         const memberIds = [member.id];
         if (member.home_member_id) memberIds.push(member.home_member_id);
         if (member.member_code) memberIds.push(member.member_code); // For backward compatibility
 
+        // Fetch parent subscriptions
         const { data: parentSubscriptions, error: parentSubError } = await supabase
           .from('checki_push_subscriptions')
           .select('subscription, phone_number, member_code')
           .in('member_code', memberIds);
 
         if (parentSubError) throw parentSubError;
+
+        // Fetch admin subscriptions
+        const { data: adminSubscriptions, error: adminSubError } = await supabase
+          .from('checki_push_subscriptions')
+          .select('subscription')
+          .eq('place_id', targetPlaceId)
+          .eq('member_code', 'ADMIN');
+
+        if (adminSubError) throw adminSubError;
 
         // If there are home subscriptions, fetch the home member to get the place_id
         if (member.home_member_id && parentSubscriptions?.some(s => s.member_code === member.home_member_id)) {
@@ -163,7 +173,10 @@ const PORT = Number(process.env.PORT) || 3000;
           if (homeMember) homePlaceId = homeMember.place_id;
         }
 
-        allSubscriptions = (parentSubscriptions || []).map(s => ({ ...s, type: 'parent' }));
+        allSubscriptions = [
+          ...(parentSubscriptions || []).map(s => ({ ...s, type: 'parent' })),
+          ...(adminSubscriptions || []).map(s => ({ ...s, type: 'admin' }))
+        ];
       }
 
       if (allSubscriptions.length === 0) {
