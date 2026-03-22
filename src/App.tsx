@@ -132,7 +132,6 @@ function LandingPage() {
             <Link to="/admin" className="bg-slate-800 text-white px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-slate-700 transition-all shadow-md whitespace-nowrap">{t('landing.go_admin')}</Link>
           ) : (
             <>
-              <Link to="/guest" className="text-xs md:text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">{t('landing.guest_lookup')}</Link>
               <Link to="/admin/login" className="text-xs md:text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors whitespace-nowrap">{t('landing.login')}</Link>
               <Link to="/register" className="bg-slate-800 text-white px-3 py-2 md:px-5 md:py-2.5 rounded-xl text-xs md:text-sm font-bold hover:bg-slate-700 transition-all shadow-md whitespace-nowrap">{t('landing.start_free')}</Link>
             </>
@@ -283,8 +282,6 @@ function LandingPage() {
   );
 }
 
-import GuestView from './components/GuestView';
-
 const isIos = () => {
   const userAgent = window.navigator.userAgent.toLowerCase();
   return /iphone|ipad|ipod/.test(userAgent);
@@ -318,6 +315,7 @@ function AttendanceView({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [touchPosition, setTouchPosition] = useState({ x: 0, y: 0 });
+  const appTitle = kioskSchoolInfo?.mode === 'edu' ? '체키 에듀' : kioskSchoolInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
   const [childrenList, setChildrenList] = useState<any[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -579,8 +577,8 @@ function AttendanceView({
               <div className="w-20 h-20 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-100">
                 <ShieldCheck className="w-10 h-10" />
               </div>
-              <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('terminal.messages.unregistered_title', { title: t('admin.title') })}</h1>
-              <p className="text-slate-500 text-sm">{t('terminal.messages.unregistered_desc', { title: t('admin.title') })}</p>
+              <h1 className="text-2xl font-bold text-slate-800 mb-2">{t('terminal.messages.unregistered_title', { title: appTitle })}</h1>
+              <p className="text-slate-500 text-sm">{t('terminal.messages.unregistered_desc', { title: appTitle })}</p>
             </div>
 
             <div className="space-y-6">
@@ -601,7 +599,7 @@ function AttendanceView({
 
               <div className="text-center pt-2">
                 <Link to="/" className="text-sm font-bold text-slate-400 hover:text-orange-500 transition-colors">
-                  {t('terminal.messages.go_home', { title: t('admin.title') })}
+                  {t('terminal.messages.go_home', { title: appTitle })}
                 </Link>
               </div>
             </div>
@@ -621,9 +619,9 @@ function AttendanceView({
           </div>
           <div>
             <h1 className="font-sans text-2xl font-bold text-orange-600 leading-tight">
-              {t('admin.title')}
+              {appTitle}
             </h1>
-            <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{terminalName || t('admin.title')}</p>
+            <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{terminalName || appTitle}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -653,7 +651,7 @@ function AttendanceView({
             <button
               onClick={handleKioskLogout}
               className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-400 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
-              title={t('terminal.messages.logout_title', { title: t('admin.title') })}
+              title={t('terminal.messages.logout_title', { title: appTitle })}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -736,7 +734,7 @@ function AttendanceView({
                     )}
                   </div>
                   <h2 className="text-4xl font-sans font-bold text-white mb-1">
-                    {view === 'success' ? t('terminal.messages.success', { title: t('admin.title') }) : t('terminal.messages.error')}
+                    {view === 'success' ? t('terminal.messages.success', { title: appTitle }) : t('terminal.messages.error')}
                   </h2>
                   <p className="text-white/90 font-medium flex items-center justify-center gap-1">
                     {view === 'success' ? (
@@ -981,7 +979,7 @@ function AttendanceView({
               onClick={e => e.stopPropagation()}
             >
               <div className="text-center">
-                <h3 className="text-xl font-bold text-slate-800">{t('terminal.messages.select_activity', { title: t('admin.title') })}</h3>
+                <h3 className="text-xl font-bold text-slate-800">{t('terminal.messages.select_activity', { title: appTitle })}</h3>
                 <p className="text-slate-500 text-sm">{t('terminal.messages.what_activity')}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1458,6 +1456,15 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
   const placeInfoStr = localStorage.getItem('checki_admin_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
+  const appTitle = placeInfo?.mode === 'edu' ? '체키 에듀' : placeInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
+
+  useEffect(() => {
+    if (placeInfo?.mode === 'edu') {
+      document.title = '체키 에듀';
+    } else {
+      document.title = '체키';
+    }
+  }, [placeInfo?.mode]);
 
   useEffect(() => {
     if (placeInfo?.language && placeInfo.language !== i18n.language) {
@@ -1584,7 +1591,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         body: JSON.stringify({
           subscription,
           payload: {
-            title: t('admin.notifications.test_title', { title: t('admin.title') }),
+            title: t('admin.notifications.test_title', { title: appTitle }),
             body: t('admin.notifications.test_body'),
             url: '/admin',
             icon: '/icon.svg',
@@ -1846,7 +1853,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         method: 'DELETE'
       });
       if (response.ok) {
-        showNotification(t('admin.messages.delete_terminal_success', { title: t('admin.title') }));
+        showNotification(t('admin.messages.delete_terminal_success', { title: appTitle }));
         setDeletingTerminalId(null);
         fetchTerminals();
       } else {
@@ -1910,6 +1917,9 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         throw new Error(t('admin.messages.already_registered_name'));
       }
 
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
       const response = await fetch('/api/students', {
         method: 'POST',
         headers: {
@@ -1917,6 +1927,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         },
         body: JSON.stringify({
           placeId,
+          userId,
           name: newStudent.name,
           isEdu: placeInfo?.mode === 'edu',
           birth_date: newStudent.birth_date || null,
@@ -1932,7 +1943,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
       }
       
       showNotification(t('admin.messages.register_success'));
-      setNewStudent({ name: '' });
+      setNewStudent({ name: '', birth_date: '', class_name: '', parent_contact: '', member_code: '' });
       setIsRegistering(false);
       fetchAttendance();
       if (activeTab === 'students') fetchStudents();
@@ -2112,7 +2123,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 <Check className="text-white w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-800">{t('admin.title')}</h1>
+                <h1 className="text-xl font-bold text-slate-800">{appTitle}</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -2153,7 +2164,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                         {t('admin.notifications.title')}
                       </h3>
                       <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                        {t('admin.notifications.desc', { members: t('admin.tabs.members'), title: t('admin.title') })}
+                        {t('admin.notifications.desc', { members: t('admin.tabs.members'), title: appTitle })}
                       </p>
                       
                       <div className="space-y-2">
@@ -2259,7 +2270,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       {t('admin.notifications.title')}
                     </h3>
                     <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                      {t('admin.notifications.desc', { members: t('admin.tabs.members'), title: t('admin.title') })}
+                      {t('admin.notifications.desc', { members: t('admin.tabs.members'), title: appTitle })}
                     </p>
                     
                     <div className="space-y-2">
@@ -2557,7 +2568,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   </div>
                 ) : terminalsList.length === 0 ? (
                   <div className="py-12 text-center text-slate-400 font-medium">
-                    {t('admin.messages.no_terminals', { title: t('admin.title') })}
+                    {t('admin.messages.no_terminals', { title: appTitle })}
                   </div>
                 ) : (
                   terminalsList.map((terminal: any, index: number) => (
@@ -3205,7 +3216,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Smartphone className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800">{t('admin.title')} {t('admin.terminal_qr.title')}</h3>
+                <h3 className="text-2xl font-bold text-slate-800">{appTitle} {t('admin.terminal_qr.title')}</h3>
                 <p className="text-slate-500 text-sm mt-1">{t('admin.terminal_qr.desc')}</p>
               </div>
 
@@ -3291,7 +3302,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 <Trash2 className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">{t('admin.messages.delete_terminal_confirm')}</h3>
-              <p className="text-slate-500 mb-8 text-sm">{t('admin.messages.delete_terminal_desc', { title: t('admin.title') })}</p>
+              <p className="text-slate-500 mb-8 text-sm">{t('admin.messages.delete_terminal_desc', { title: appTitle })}</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setDeletingTerminalId(null)}
@@ -3407,6 +3418,10 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
   const hasVerified = useRef(false);
   const isMounted = useRef(true);
 
+  const placeInfoStr = localStorage.getItem('checki_kiosk_place_info');
+  const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
+  const appTitle = placeInfo?.mode === 'edu' ? '체키 에듀' : placeInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
+
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -3481,7 +3496,7 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
         {status === 'loading' && (
           <div className="space-y-6">
             <div className="w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <h2 className="text-2xl font-bold text-slate-800">{t('terminal.messages.registration.registering', { title: t('admin.title') })}</h2>
+            <h2 className="text-2xl font-bold text-slate-800">{t('terminal.messages.registration.registering', { title: appTitle })}</h2>
             <p className="text-slate-500">{t('admin.messages.loading')}</p>
           </div>
         )}
@@ -3492,7 +3507,7 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
               <Check className="w-10 h-10" strokeWidth={3} />
             </div>
             <h2 className="text-2xl font-bold text-slate-800">{t('terminal.messages.success', { title: '' })}</h2>
-            <p className="text-slate-500">{t('terminal.messages.registration.success', { title: t('admin.title') })}<br/>{t('terminal.messages.registration.success_desc', { title: t('admin.title') })}</p>
+            <p className="text-slate-500">{t('terminal.messages.registration.success', { title: appTitle })}<br/>{t('terminal.messages.registration.success_desc', { title: appTitle })}</p>
           </div>
         )}
 
@@ -3529,6 +3544,7 @@ function HistoryView() {
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; time: string } | null>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [placeInfo, setPlaceInfo] = useState<any>(null);
+  const appTitle = placeInfo?.mode === 'edu' ? '체키 에듀' : placeInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -3568,8 +3584,21 @@ function HistoryView() {
     setIsLoading(true);
     setIsSearched(false);
     try {
+      let currentPlaceInfo = placeInfo;
+      if (!currentPlaceInfo) {
+        const { data, error } = await supabase
+          .from('checki_places')
+          .select('*')
+          .eq('id', targetPlaceId)
+          .single();
+        if (!error && data) {
+          currentPlaceInfo = data;
+          setPlaceInfo(data);
+        }
+      }
+
       // 1. Verify student and parent contact
-      const targetTable = placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members';
+      const targetTable = currentPlaceInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members';
       const { data: memberData, error: memberError } = await supabase
         .from(targetTable)
         .select('*')
@@ -3601,7 +3630,7 @@ function HistoryView() {
         return;
       }
 
-      setStudentInfo({ ...memberData, placeName: placeInfo?.name || '' });
+      setStudentInfo({ ...memberData, placeName: currentPlaceInfo?.name || '' });
 
       // 2. Fetch attendance
       const { data: attendanceData, error: attendanceError } = await supabase
@@ -3861,7 +3890,7 @@ function HistoryView() {
         body: JSON.stringify({
           subscription: subscription,
           payload: {
-            title: `${t('admin.title')} 알림 테스트`,
+            title: `${appTitle} 알림 테스트`,
             body: '알림이 정상적으로 작동합니다! 🔔',
             icon: '/icon.svg',
             badge: '/badge.svg',
@@ -4294,6 +4323,7 @@ export default function App() {
   const [terminalName, setTerminalName] = useState<string>('');
   const [terminalActivities, setTerminalActivities] = useState<string[]>(['집', '학교', '외출']);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const appTitle = kioskSchoolInfo?.mode === 'edu' ? '체키 에듀' : kioskSchoolInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
 
   const getModeOptions = () => {
     return [
@@ -4321,6 +4351,18 @@ export default function App() {
       if (name) setTerminalName(name);
     }
   }, []);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin')) {
+      const placeInfoStr = localStorage.getItem('checki_admin_place_info');
+      const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
+      document.title = placeInfo?.mode === 'edu' ? '체키 에듀' : '체키';
+    } else if (location.pathname.startsWith('/kiosk')) {
+      document.title = kioskSchoolInfo?.mode === 'edu' ? '체키 에듀' : '체키';
+    } else {
+      document.title = '체키';
+    }
+  }, [location.pathname, kioskSchoolInfo?.mode]);
 
   useEffect(() => {
     if (kioskSchoolInfo?.language && kioskSchoolInfo.language !== i18n.language) {
@@ -4386,7 +4428,7 @@ export default function App() {
           setKioskAuth(false);
           setKioskSchoolInfo(null);
           setTerminalName('');
-          alert(t('terminal.messages.terminal_deleted', { title: t('admin.title') }));
+          alert(t('terminal.messages.terminal_deleted', { title: appTitle }));
           return false;
         }
         
@@ -4432,7 +4474,7 @@ export default function App() {
                   setKioskAuth(false);
                   setKioskSchoolInfo(null);
                   setTerminalName('');
-                  alert(t('terminal.messages.terminal_deleted', { title: t('admin.title') }));
+                  alert(t('terminal.messages.terminal_deleted', { title: appTitle }));
                 }
               }).catch(err => console.error('Failed to update terminal location:', err));
             }
@@ -4763,7 +4805,6 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/guest" element={<GuestView />} />
       <Route path="/kiosk" element={
           <AttendanceView 
             view={view} setView={setView} 

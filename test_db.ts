@@ -1,10 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 dotenv.config();
-const supabase = createClient(process.env.VITE_SUPABASE_URL!, process.env.VITE_SUPABASE_ANON_KEY!);
-async function test() {
-  const { data, error } = await supabase.from('checki_history').select('*').limit(1);
-  console.log(JSON.stringify(data, null, 2));
-  console.log(error);
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl!, supabaseKey!);
+
+async function checkSchema() {
+  const { data, error } = await supabase
+    .from('checki_edu_members')
+    .select('*')
+    .limit(1);
+  console.log('Data:', data);
+  console.log('Error:', error);
 }
-test();
+
+checkSchema();

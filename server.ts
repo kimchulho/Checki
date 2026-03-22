@@ -517,7 +517,8 @@ const PORT = Number(process.env.PORT) || 3000;
 
       let memberData: any = {
         name,
-        place_id: placeId
+        place_id: placeId,
+        ...(userId && { user_id: userId })
       };
 
       if (isEdu) {
@@ -650,76 +651,6 @@ const PORT = Number(process.env.PORT) || 3000;
       if (updateError) throw updateError;
       
       res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Guest Attendance Lookup
-  app.get("/api/guest/attendance", async (req, res) => {
-    const { name, contact } = req.query;
-    if (!name || !contact) return res.status(400).json({ error: "이름과 연락처가 필요합니다." });
-
-    const supabase = getSupabaseAdmin() || getSupabase();
-    if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
-
-    try {
-      // 1. Find the edu student
-      const { data: students, error: findError } = await supabase
-        .from('checki_edu_members')
-        .select('id, place_id')
-        .eq('name', name as string)
-        .eq('parent_contact', contact as string);
-
-      if (findError || !students || students.length === 0) {
-        return res.status(404).json({ error: "일치하는 원생 정보가 없습니다." });
-      }
-
-      // 2. Get attendance for all matching students (in case of multiple academies)
-      const childIds = students.map(s => s.id);
-      
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const { data: attendance, error: attError } = await supabase
-        .from('checki_history')
-        .select(`
-          id,
-          timestamp,
-          activity_type,
-          child_id,
-          place_id
-        `)
-        .in('child_id', childIds)
-        .gte('timestamp', thirtyDaysAgo.toISOString())
-        .order('timestamp', { ascending: false });
-
-      if (attError) throw attError;
-
-      // Fetch place names separately
-      const placeIds = [...new Set((attendance || []).map(a => a.place_id).filter(Boolean))];
-      let placeMap: Record<string, string> = {};
-      
-      if (placeIds.length > 0) {
-        const { data: places } = await supabase
-          .from('checki_places')
-          .select('id, name')
-          .in('id', placeIds);
-          
-        if (places) {
-          placeMap = places.reduce((acc, p) => ({ ...acc, [p.id]: p.name }), {});
-        }
-      }
-
-      const attendanceWithPlaces = (attendance || []).map(a => ({
-        ...a,
-        place: a.place_id ? { name: placeMap[a.place_id] || '학원' } : null
-      }));
-
-      res.json({ 
-        attendance: attendanceWithPlaces,
-        studentName: name
-      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
