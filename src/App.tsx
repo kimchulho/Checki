@@ -1555,6 +1555,8 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
   const [isLoadingTerminals, setIsLoadingTerminals] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any | null>(null);
+  const [linkedEduMembers, setLinkedEduMembers] = useState<any[]>([]);
+  const [isLoadingLinkedMembers, setIsLoadingLinkedMembers] = useState(false);
   const [editingTerminal, setEditingTerminal] = useState<any | null>(null);
   const [newStudent, setNewStudent] = useState({
     name: '',
@@ -1860,6 +1862,40 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     }
     setSelectedPhoto(null);
   };
+
+  const fetchLinkedEduMembers = async (studentId: string) => {
+    if (!studentId || placeInfo?.mode !== 'home') return;
+    setIsLoadingLinkedMembers(true);
+    try {
+      const { data, error } = await supabase
+        .from('checki_edu_members')
+        .select(`
+          id,
+          name,
+          invite_code,
+          place_id,
+          checki_places (
+            name
+          )
+        `)
+        .eq('home_member_id', studentId);
+      
+      if (error) throw error;
+      setLinkedEduMembers(data || []);
+    } catch (err) {
+      console.error('Error fetching linked edu members:', err);
+    } finally {
+      setIsLoadingLinkedMembers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (editingStudent?.id && placeInfo?.mode === 'home') {
+      fetchLinkedEduMembers(editingStudent.id);
+    } else {
+      setLinkedEduMembers([]);
+    }
+  }, [editingStudent?.id, placeInfo?.mode]);
 
   const fetchStudents = async () => {
     setIsLoadingStudents(true);
@@ -3024,6 +3060,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                               if (res.ok) {
                                 showNotification('학원과 성공적으로 연결되었습니다.');
                                 setEditingStudent({...editingStudent, input_invite_code: ''});
+                                fetchLinkedEduMembers(editingStudent.id);
                               } else {
                                 const data = await res.json();
                                 showNotification(data.error || '연결에 실패했습니다.', 'error');
@@ -3037,6 +3074,51 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                           연결
                         </button>
                       </div>
+                      
+                      {/* Linked Edu Members List */}
+                      {isLoadingLinkedMembers ? (
+                        <div className="text-center py-4 text-sm text-slate-500">연결 정보를 불러오는 중...</div>
+                      ) : linkedEduMembers.length > 0 ? (
+                        <div className="mt-4 space-y-2">
+                          <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">연결된 학원 목록</div>
+                          {linkedEduMembers.map(eduMember => (
+                            <div key={eduMember.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200">
+                              <div>
+                                <div className="text-sm font-bold text-slate-700">{eduMember.checki_places?.name || '알 수 없는 학원'}</div>
+                                <div className="text-xs text-slate-500">학생 이름: {eduMember.name} | 코드: {eduMember.invite_code}</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!confirm('정말로 이 학원과의 연결을 끊으시겠습니까?')) return;
+                                  try {
+                                    const res = await fetch(`/api/students/${editingStudent.id}/unlink`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ edu_member_id: eduMember.id })
+                                    });
+                                    if (res.ok) {
+                                      showNotification('연결이 해제되었습니다.');
+                                      fetchLinkedEduMembers(editingStudent.id);
+                                    } else {
+                                      const data = await res.json();
+                                      showNotification(data.error || '연결 해제에 실패했습니다.', 'error');
+                                    }
+                                  } catch (e) {
+                                    console.error(e);
+                                  }
+                                }}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="연결 끊기"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-sm text-slate-500">연결된 학원이 없습니다.</div>
+                      )}
                     </div>
                   )}
 

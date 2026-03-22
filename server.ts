@@ -659,6 +659,29 @@ const PORT = Number(process.env.PORT) || 3000;
     }
   });
 
+  // Unlink Home Student from Edu Student
+  app.post("/api/students/:studentId/unlink", async (req, res) => {
+    const { studentId } = req.params;
+    const { edu_member_id } = req.body;
+    const supabase = getSupabaseAdmin() || getSupabase();
+    if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
+
+    try {
+      // Unlink the home student from the specific edu student
+      const { error: updateError } = await supabase
+        .from('checki_edu_members')
+        .update({ home_member_id: null })
+        .eq('id', edu_member_id)
+        .eq('home_member_id', studentId);
+
+      if (updateError) throw updateError;
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Delete Student
   app.delete("/api/students/:studentId", async (req, res) => {
     const { studentId } = req.params;
