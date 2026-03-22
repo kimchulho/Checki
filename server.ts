@@ -437,7 +437,7 @@ const PORT = Number(process.env.PORT) || 3000;
         .select('name')
         .eq('place_id', data.place_id);
       
-      const baseName = '우리 집';
+      const baseName = place.mode === 'edu' ? '정문 단말기' : place.mode === 'business' ? '출입구 단말기' : '우리 집';
       let terminalName = baseName;
       
       if (existingTerminals && existingTerminals.length > 0) {
@@ -451,12 +451,15 @@ const PORT = Number(process.env.PORT) || 3000;
         }
       }
 
+      const defaultActivities = place.mode === 'edu' ? ['등원', '하원'] : place.mode === 'business' ? ['출근', '퇴근'] : ['집', '학교', '외출'];
+
       // Create a new terminal entry
       const { data: terminal, error: terminalError } = await supabase
         .from('checki_terminals')
         .insert([{ 
           place_id: data.place_id, 
-          name: terminalName 
+          name: terminalName,
+          activities: defaultActivities
         }])
         .select()
         .single();

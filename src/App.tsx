@@ -323,6 +323,7 @@ function AttendanceView({
   const [isScanningQR, setIsScanningQR] = useState(false);
   const [selectedActivityToConfirm, setSelectedActivityToConfirm] = useState<string | null>(null);
   const [customActivity, setCustomActivity] = useState<string | null>(null);
+  const [keypadInput, setKeypadInput] = useState('');
   const navigate = useNavigate();
 
   const handleActivitySelect = (activity: string) => {
@@ -523,6 +524,27 @@ function AttendanceView({
     } else {
       setPendingChildName(childName);
     }
+  };
+
+  const handleKeypadPress = (num: string) => {
+    if (keypadInput.length < 4) {
+      const newInput = keypadInput + num;
+      setKeypadInput(newInput);
+      if (newInput.length === 4) {
+        const child = childrenList.find(c => c.member_code === newInput);
+        if (child) {
+          handleChildClick(child.name);
+          setTimeout(() => setKeypadInput(''), 500);
+        } else {
+          alert('일치하는 원생이 없습니다.');
+          setKeypadInput('');
+        }
+      }
+    }
+  };
+
+  const handleKeypadDelete = () => {
+    setKeypadInput(prev => prev.slice(0, -1));
   };
 
   const screensaverVariants = {
@@ -777,39 +799,120 @@ function AttendanceView({
               </div>
             ) : (
               <>
-                <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
-                  {childrenList.map((child) => {
-                    let buttonWidthClass = '';
-                    if (childrenList.length === 1) {
-                      buttonWidthClass = 'w-full';
-                    } else if (childrenList.length === 2) {
-                      buttonWidthClass = 'w-[calc(50%-0.375rem)]';
-                    } else {
-                      buttonWidthClass = 'w-[calc(33.333%-0.5rem)]';
-                    }
-                    const isSelected = pendingChildName === child.name;
-                    return (
-                      <button
-                        key={child.id}
-                        onClick={() => handleChildClick(child.name)}
-                        className={`flex-shrink-0 h-24 md:h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border active:scale-95 transition-all group snap-center ${buttonWidthClass} ${
-                          isSelected 
-                            ? 'bg-orange-500 border-orange-600 text-white' 
-                            : 'bg-white border-orange-50 hover:bg-orange-50'
-                        }`}
-                      >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                          isSelected ? 'bg-white/20' : 'bg-orange-100 group-hover:bg-orange-200'
-                        }`}>
-                          <User className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-orange-500'}`} />
+                {kioskSchoolInfo?.mode === 'edu' ? (
+                  !pendingChildName ? (
+                    <div className="w-full max-w-sm mx-auto flex flex-col items-center gap-4">
+                      <div className="text-center">
+                        <h3 className="text-xl font-bold text-slate-800">출석 번호 입력</h3>
+                        <p className="text-slate-500 text-sm mt-1">4자리 번호를 입력해주세요</p>
+                      </div>
+                      
+                      {/* Keypad Display */}
+                      <div className="flex gap-3 justify-center mb-2">
+                        {[0, 1, 2, 3].map((index) => (
+                          <div 
+                            key={index}
+                            className={`w-14 h-16 rounded-2xl flex items-center justify-center text-3xl font-bold transition-all ${
+                              keypadInput[index] 
+                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' 
+                                : 'bg-slate-100 text-slate-300'
+                            }`}
+                          >
+                            {keypadInput[index] ? '•' : ''}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Keypad Buttons */}
+                      <div className="grid grid-cols-3 gap-3 w-full">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                          <button
+                            key={num}
+                            onClick={() => handleKeypadPress(num.toString())}
+                            className="h-16 bg-white border border-slate-100 rounded-2xl text-2xl font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm"
+                          >
+                            {num}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setKeypadInput('')}
+                          className="h-16 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-100 active:scale-95 transition-all shadow-sm"
+                        >
+                          초기화
+                        </button>
+                        <button
+                          onClick={() => handleKeypadPress('0')}
+                          className="h-16 bg-white border border-slate-100 rounded-2xl text-2xl font-bold text-slate-700 hover:bg-orange-50 hover:text-orange-600 active:scale-95 transition-all shadow-sm"
+                        >
+                          0
+                        </button>
+                        <button
+                          onClick={handleKeypadDelete}
+                          className="h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-500 hover:bg-slate-100 active:scale-95 transition-all shadow-sm"
+                        >
+                          <Delete className="w-6 h-6" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full flex flex-col items-center gap-4 mb-4">
+                      <div className="w-full max-w-sm bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white">
+                            <User className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-orange-600 font-medium">선택된 원생</p>
+                            <p className="text-lg font-bold text-slate-800">{pendingChildName}</p>
+                          </div>
                         </div>
-                        <span className={`text-sm md:text-base font-black line-clamp-2 leading-tight break-all whitespace-normal w-full text-center ${
-                          isSelected ? 'text-white' : 'text-slate-700'
-                        }`}>{child.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                        <button 
+                          onClick={() => {
+                            setPendingChildName(null);
+                            setKeypadInput('');
+                          }}
+                          className="px-4 py-2 bg-white text-slate-600 rounded-xl text-sm font-bold shadow-sm border border-slate-200 hover:bg-slate-50"
+                        >
+                          다시 입력
+                        </button>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex gap-3 w-full overflow-x-auto no-scrollbar snap-x snap-mandatory px-1 py-1">
+                    {childrenList.map((child) => {
+                      let buttonWidthClass = '';
+                      if (childrenList.length === 1) {
+                        buttonWidthClass = 'w-full';
+                      } else if (childrenList.length === 2) {
+                        buttonWidthClass = 'w-[calc(50%-0.375rem)]';
+                      } else {
+                        buttonWidthClass = 'w-[calc(33.333%-0.5rem)]';
+                      }
+                      const isSelected = pendingChildName === child.name;
+                      return (
+                        <button
+                          key={child.id}
+                          onClick={() => handleChildClick(child.name)}
+                          className={`flex-shrink-0 h-24 md:h-28 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-sm border active:scale-95 transition-all group snap-center ${buttonWidthClass} ${
+                            isSelected 
+                              ? 'bg-orange-500 border-orange-600 text-white' 
+                              : 'bg-white border-orange-50 hover:bg-orange-50'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected ? 'bg-white/20' : 'bg-orange-100 group-hover:bg-orange-200'
+                          }`}>
+                            <User className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-orange-500'}`} />
+                          </div>
+                          <span className={`text-sm md:text-base font-black line-clamp-2 leading-tight break-all whitespace-normal w-full text-center ${
+                            isSelected ? 'text-white' : 'text-slate-700'
+                          }`}>{child.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {pendingChildName && (
@@ -1457,12 +1560,15 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
   const placeInfoStr = localStorage.getItem('checki_admin_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
   const appTitle = placeInfo?.mode === 'edu' ? '체키 에듀' : placeInfo?.mode === 'business' ? '체키 비즈' : t('admin.title');
+  const headerTitle = placeInfo?.mode === 'edu' ? '체키 에듀 관리자' : placeInfo?.mode === 'business' ? '체키 비즈 관리자' : t('admin.title');
 
   useEffect(() => {
     if (placeInfo?.mode === 'edu') {
-      document.title = '체키 에듀';
+      document.title = '체키 에듀 관리자';
+    } else if (placeInfo?.mode === 'business') {
+      document.title = '체키 비즈 관리자';
     } else {
-      document.title = '체키';
+      document.title = '체키 관리자';
     }
   }, [placeInfo?.mode]);
 
@@ -2123,7 +2229,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 <Check className="text-white w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-800">{appTitle}</h1>
+                <h1 className="text-xl font-bold text-slate-800">{headerTitle}</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -2545,7 +2651,12 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                         <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center shrink-0">
                           <User className="w-6 h-6" />
                         </div>
-                        <p className="font-bold text-slate-800 text-lg">{student.name}</p>
+                        <div>
+                          <p className="font-bold text-slate-800 text-lg">{student.name}</p>
+                          {student.member_code && (
+                            <p className="text-sm text-slate-500 font-medium mt-0.5">출석 번호: {student.member_code}</p>
+                          )}
+                        </div>
                       </div>
                       
                       <button 
@@ -4347,8 +4458,10 @@ export default function App() {
     const name = localStorage.getItem('checki_terminal_name');
     if (auth === 'true' && info) {
       setKioskAuth(true);
-      setKioskSchoolInfo(JSON.parse(info));
+      const parsedInfo = JSON.parse(info);
+      setKioskSchoolInfo(parsedInfo);
       if (name) setTerminalName(name);
+      setTerminalActivities(parsedInfo?.mode === 'edu' ? ['등원', '하원'] : ['집', '학교', '외출']);
     }
   }, []);
 
@@ -4437,8 +4550,10 @@ export default function App() {
           setTerminalName(data.name);
           localStorage.setItem('checki_terminal_name', data.name);
         }
-        if (data.activities && Array.isArray(data.activities)) {
+        if (data.activities && Array.isArray(data.activities) && data.activities.length > 0) {
           setTerminalActivities(data.activities);
+        } else {
+          setTerminalActivities(kioskSchoolInfo?.mode === 'edu' ? ['등원', '하원'] : ['집', '학교', '외출']);
         }
         
         return true;
@@ -4490,7 +4605,7 @@ export default function App() {
     updateLocation();
     const interval = setInterval(updateLocation, 60 * 1000); // Every 1 minute
     return () => clearInterval(interval);
-  }, [kioskAuth, location.pathname]);
+  }, [kioskAuth, location.pathname, kioskSchoolInfo?.mode]);
   
   // Redirect if already in kiosk mode
   useEffect(() => {
