@@ -685,7 +685,7 @@ function AttendanceView({
       <main className="flex-1 min-h-0 w-full max-w-md flex flex-col gap-4 p-4">
         
         {/* Persistent Camera Feed */}
-        <div className="relative w-full aspect-square bg-slate-900 rounded-[2rem] overflow-hidden shadow-xl border-4 border-white shrink-0 transition-all duration-300">
+        <div className={`relative w-full ${kioskSchoolInfo?.mode === 'edu' ? 'aspect-[4/3]' : 'aspect-square'} bg-slate-900 rounded-[2rem] overflow-hidden shadow-xl border-4 border-white shrink-0 transition-all duration-300`}>
           <video
             ref={videoRef}
             autoPlay
@@ -802,13 +802,14 @@ function AttendanceView({
                 {kioskSchoolInfo?.mode === 'edu' ? (
                   !pendingChildName ? (
                     <div className="w-full max-w-sm mx-auto flex flex-col items-center gap-4">
-                      <div className="text-center">
-                        <h3 className="text-xl font-bold text-slate-800">출석 번호 입력</h3>
-                        <p className="text-slate-500 text-sm mt-1">4자리 번호를 입력해주세요</p>
-                      </div>
-                      
-                      {/* Keypad Display */}
-                      <div className="flex gap-3 justify-center mb-2">
+                      {/* Keypad Display with Overlapping Text */}
+                      <div className="relative flex gap-3 justify-center mb-6 mt-4">
+                        {keypadInput.length === 0 && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 w-full h-full">
+                            <h3 className="text-xl font-bold text-slate-800 drop-shadow-sm">출석 번호 입력</h3>
+                            <p className="text-slate-500 text-sm mt-1 font-medium drop-shadow-sm">4자리 번호를 입력해주세요</p>
+                          </div>
+                        )}
                         {[0, 1, 2, 3].map((index) => (
                           <div 
                             key={index}
@@ -816,7 +817,7 @@ function AttendanceView({
                               keypadInput[index] 
                                 ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' 
                                 : 'bg-slate-100 text-slate-300'
-                            }`}
+                            } ${keypadInput.length === 0 ? 'opacity-40' : 'opacity-100'}`}
                           >
                             {keypadInput[index] ? '•' : ''}
                           </div>
