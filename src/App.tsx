@@ -315,7 +315,7 @@ function AttendanceView({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [touchPosition, setTouchPosition] = useState({ x: 0, y: 0 });
-  const appTitle = '체키';
+  const appTitle = t('admin.title');
   const [childrenList, setChildrenList] = useState<any[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -1582,11 +1582,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
   const placeInfoStr = localStorage.getItem('checki_admin_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
-  const appTitle = '체키';
+  const appTitle = t('admin.title');
 
   useEffect(() => {
-    document.title = '체키';
-  }, [placeInfo?.mode]);
+    document.title = t('admin.title');
+  }, [placeInfo?.mode, t]);
 
   useEffect(() => {
     if (placeInfo?.language && placeInfo.language !== i18n.language) {
@@ -3057,7 +3057,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                   {placeInfo?.mode === 'home' && (
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-bold text-slate-600">체키 에듀(학원) 연결</span>
+                        <span className="text-sm font-bold text-slate-600">{t('auth.type_edu')} {i18n.language === 'ko' ? '(학원) 연결' : 'Link'}</span>
                       </div>
                       <div className="flex gap-2">
                         <input
@@ -3667,7 +3667,7 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
 
   const placeInfoStr = localStorage.getItem('checki_kiosk_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
-  const appTitle = '체키';
+  const appTitle = t('admin.title');
 
   useEffect(() => {
     isMounted.current = true;
@@ -3791,7 +3791,7 @@ function HistoryView() {
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; time: string } | null>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [placeInfo, setPlaceInfo] = useState<any>(null);
-  const appTitle = '체키';
+  const appTitle = t('admin.title');
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -4591,7 +4591,7 @@ export default function App() {
   const [terminalName, setTerminalName] = useState<string>('');
   const [terminalActivities, setTerminalActivities] = useState<string[]>(['집', '학교', '외출']);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const appTitle = '체키';
+  const appTitle = t('admin.title');
 
   const getModeOptions = () => {
     return [
@@ -4623,8 +4623,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.title = '체키';
-  }, [location.pathname, kioskSchoolInfo?.mode]);
+    document.title = t('admin.title');
+  }, [location.pathname, kioskSchoolInfo?.mode, t]);
 
   useEffect(() => {
     if (kioskSchoolInfo?.language && kioskSchoolInfo.language !== i18n.language) {

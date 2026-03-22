@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, Phone, MessageSquare, Save, ArrowLeft, Mail } from 'lucide-react';
+import { Building2, User, Lock, Phone, MessageSquare, Save, ArrowLeft, Mail, Home, School } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '../App';
@@ -86,10 +86,14 @@ export function SchoolRegistration() {
 
           <div className="mt-8 text-center">
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Building2 className="w-8 h-8 text-white" />
+              {formData.mode === 'edu' ? (
+                <School className="w-8 h-8 text-white" />
+              ) : (
+                <Home className="w-8 h-8 text-white" />
+              )}
             </div>
             <h1 className="text-2xl font-bold mb-1">
-              {formData.mode === 'edu' ? t('auth.edu') : t('auth.register_title')}
+              {formData.mode === 'edu' ? t('auth.type_edu') : t('auth.type_home')}
             </h1>
             <p className="text-orange-100 text-sm font-medium">
               {formData.mode === 'edu' ? t('auth.register_subtitle_edu') : t('auth.register_subtitle')}
@@ -181,7 +185,11 @@ export function SchoolRegistration() {
                 {formData.mode === 'edu' ? t('auth.name_edu') : t('auth.name')}
               </label>
               <div className="relative">
-                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                {formData.mode === 'edu' ? (
+                  <School className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                ) : (
+                  <Home className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                )}
                 <input
                   required
                   type="text"
@@ -195,10 +203,13 @@ export function SchoolRegistration() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.phone')} ({t('common.optional')})</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                {t('auth.phone')} {formData.mode !== 'edu' && `(${t('common.optional')})`}
+              </label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
+                  required={formData.mode === 'edu'}
                   type="tel"
                   name="contact_phone"
                   value={formData.contact_phone}
