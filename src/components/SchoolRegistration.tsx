@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, Phone, MessageSquare, Save, ArrowLeft, Mail, Home, School } from 'lucide-react';
+import { Building2, User, Lock, Phone, MessageSquare, ArrowLeft, Mail, Home, School } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from '../App';
@@ -225,10 +225,8 @@ export function SchoolRegistration() {
               disabled={isLoading}
               className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-300 text-white rounded-2xl font-bold text-lg shadow-lg shadow-orange-100 transition-all flex items-center justify-center gap-2 mt-6"
             >
-              {isLoading ? (
+              {isLoading && (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="w-5 h-5" />
               )}
               <span>{isLoading ? t('auth.register_loading') : t('auth.register_button')}</span>
             </button>
