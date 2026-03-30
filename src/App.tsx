@@ -549,17 +549,37 @@ function AttendanceView({
 
   const screensaverVariants = {
     initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { 
+      opacity: 0, 
+      transition: { duration: 0.4, delay: 0.8, ease: "easeInOut" } 
+    }
+  };
+
+  const flashCircleVariants = {
+    initial: (pos: { x: number, y: number }) => ({ 
+      width: 0, height: 0, left: pos.x, top: pos.y, x: "-50%", y: "-50%", opacity: 0
+    }),
     animate: (pos: { x: number, y: number }) => ({ 
-      opacity: 1,
-      WebkitMaskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 0%, black 0%)`,
-      maskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 0%, black 0%)`
+      width: 0, height: 0, left: pos.x, top: pos.y, x: "-50%", y: "-50%", opacity: 0
     }),
     exit: (pos: { x: number, y: number }) => ({ 
+      width: "300vmax", 
+      height: "300vmax", 
+      left: pos.x, top: pos.y,
       opacity: 1,
-      WebkitMaskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 150%, black 150%)`,
-      maskImage: `radial-gradient(circle at ${pos.x}px ${pos.y}px, transparent 150%, black 150%)`,
-      transition: { duration: 0.8, ease: "easeInOut" }
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
     })
+  };
+
+  const checkmarkVariants = {
+    initial: { scale: 0, opacity: 0 },
+    animate: { scale: 0, opacity: 0 },
+    exit: { 
+      scale: 1, 
+      opacity: 1,
+      transition: { duration: 0.6, delay: 0.1, type: "spring", bounce: 0.5 } 
+    }
   };
 
   if (!kioskAuth) {
@@ -1226,6 +1246,17 @@ function AttendanceView({
               <div className="text-3xl md:text-5xl font-bold tracking-widest text-center leading-relaxed">
                 {t('terminal.screensaver.touch_screen')}
               </div>
+            </motion.div>
+
+            {/* Wake-up Flash Circle */}
+            <motion.div
+              custom={touchPosition}
+              variants={flashCircleVariants}
+              className="absolute rounded-full bg-orange-500 flex items-center justify-center pointer-events-none"
+            >
+              <motion.div variants={checkmarkVariants}>
+                <Check className="w-32 h-32 text-white" strokeWidth={4} />
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
