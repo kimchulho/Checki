@@ -2834,9 +2834,11 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                       
                       <div className="relative">
                         {(!terminal.activities || ['집,학교,외출', '등원,하원', '출근,퇴근'].includes((terminal.activities || []).join(','))) && (
-                          <div className="absolute top-1/2 -translate-y-1/2 right-full mr-3 bg-blue-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-pulse z-10">
-                            활동을 추가해 보세요
-                            <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-blue-500 rotate-45"></div>
+                          <div className="absolute top-1/2 -translate-y-1/2 right-full mr-3 z-10">
+                            <div className="bg-blue-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce relative">
+                              활동을 추가해 보세요
+                              <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-blue-500 rotate-45"></div>
+                            </div>
                           </div>
                         )}
                         <button 
