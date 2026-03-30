@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Routes, Route, useNavigate, useLocation, Link, useSearchParams, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff, Smartphone, Link2, Home, School, Building, Bluetooth, BluetoothOff } from 'lucide-react';
+import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff, Smartphone, Link2, Home, School, Building } from 'lucide-react';
 import { encryptBlob, uploadAttendanceData, decryptBlob } from './services/securityService';
 import { supabase } from './services/supabaseClient';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -324,26 +324,7 @@ function AttendanceView({
   const [selectedActivityToConfirm, setSelectedActivityToConfirm] = useState<string | null>(null);
   const [customActivity, setCustomActivity] = useState<string | null>(null);
   const [keypadInput, setKeypadInput] = useState('');
-  const [isBluetoothEnabled, setIsBluetoothEnabled] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const nav = navigator as any;
-    if (nav.bluetooth && nav.bluetooth.getAvailability) {
-      nav.bluetooth.getAvailability().then((available: boolean) => {
-        setIsBluetoothEnabled(available);
-      });
-
-      const handleAvailabilityChange = (e: any) => {
-        setIsBluetoothEnabled(e.value);
-      };
-
-      nav.bluetooth.addEventListener('availabilitychanged', handleAvailabilityChange);
-      return () => {
-        nav.bluetooth.removeEventListener('availabilitychanged', handleAvailabilityChange);
-      };
-    }
-  }, []);
 
   const handleActivitySelect = (activity: string) => {
     if (selectedActivityToConfirm === activity) {
@@ -699,12 +680,6 @@ function AttendanceView({
                 <Download className="w-4 h-4" />
               </button>
             )}
-            <div
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isBluetoothEnabled ? 'bg-blue-100 text-blue-500' : 'bg-slate-100 text-slate-400'}`}
-              title={isBluetoothEnabled ? t('terminal.messages.bluetooth_on', '블루투스 켜짐') : t('terminal.messages.bluetooth_off', '블루투스 꺼짐')}
-            >
-              {isBluetoothEnabled ? <Bluetooth className="w-4 h-4" /> : <BluetoothOff className="w-4 h-4" />}
-            </div>
             <div
               className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${currentLocation ? 'bg-emerald-100 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}
               title={currentLocation ? t('terminal.messages.gps_receiving') : t('terminal.messages.gps_not_receiving')}
@@ -2857,16 +2832,24 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                         </div>
                       </div>
                       
-                      <button 
-                        onClick={() => setEditingTerminal({
-                          ...terminal,
-                          activitiesInput: Array.isArray(terminal.activities) ? terminal.activities.join(', ') : '집, 학교, 외출'
-                        })}
-                        className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all shrink-0"
-                        title={t('admin.buttons.settings')}
-                      >
-                        <Settings className="w-5 h-5" />
-                      </button>
+                      <div className="relative">
+                        {(!terminal.activities || ['집,학교,외출', '등원,하원', '출근,퇴근'].includes((terminal.activities || []).join(','))) && (
+                          <div className="absolute top-1/2 -translate-y-1/2 right-full mr-3 bg-blue-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-pulse z-10">
+                            활동을 추가해 보세요
+                            <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-blue-500 rotate-45"></div>
+                          </div>
+                        )}
+                        <button 
+                          onClick={() => setEditingTerminal({
+                            ...terminal,
+                            activitiesInput: Array.isArray(terminal.activities) ? terminal.activities.join(', ') : '집, 학교, 외출'
+                          })}
+                          className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all shrink-0 relative z-20"
+                          title={t('admin.buttons.settings')}
+                        >
+                          <Settings className="w-5 h-5" />
+                        </button>
+                      </div>
                     </motion.div>
                   ))
                 )}
