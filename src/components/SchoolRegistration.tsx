@@ -132,92 +132,90 @@ export function SchoolRegistration() {
 
 
 
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.username')}</label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  required
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder={t('auth.username_placeholder')}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
-                />
+            <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+              <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                <User className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">{t('auth.username')}</span>
               </div>
+              <input
+                required
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder={t('auth.username_placeholder')}
+                className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
+              />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.password')}</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  required
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder={t('auth.password_placeholder')}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
-                />
+            <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+              <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                <Lock className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">{t('auth.password')}</span>
               </div>
+              <input
+                required
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder={t('auth.password_placeholder')}
+                className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
+              />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t('auth.email')}</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  required
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder={t('auth.email_placeholder')}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
-                />
+            <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+              <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                <Mail className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">{t('auth.email')}</span>
               </div>
+              <input
+                required
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder={t('auth.email_placeholder')}
+                className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
+              />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                {formData.mode === 'edu' ? t('auth.name_edu') : t('auth.name')}
-              </label>
-              <div className="relative">
+            <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+              <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
                 {formData.mode === 'edu' ? (
-                  <School className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <School className="w-4 h-4" />
                 ) : (
-                  <Home className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Home className="w-4 h-4" />
                 )}
-                <input
-                  required
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder={formData.mode === 'edu' ? t('auth.name_placeholder_edu') : t('auth.name_placeholder')}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
-                />
+                <span className="text-xs font-bold uppercase tracking-widest">{formData.mode === 'edu' ? t('auth.name_edu') : t('auth.name')}</span>
               </div>
+              <input
+                required
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder={formData.mode === 'edu' ? t('auth.name_placeholder_edu') : t('auth.name_placeholder')}
+                className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
+              />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                {t('auth.phone')} {formData.mode !== 'edu' && `(${t('common.optional')})`}
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  required={formData.mode === 'edu'}
-                  type="tel"
-                  name="contact_phone"
-                  value={formData.contact_phone}
-                  onChange={handleChange}
-                  placeholder={t('auth.phone_placeholder')}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
-                />
+            <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+              <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                <Phone className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                  {t('auth.phone')} {formData.mode !== 'edu' && `(${t('common.optional')})`}
+                </span>
               </div>
+              <input
+                required={formData.mode === 'edu'}
+                type="tel"
+                name="contact_phone"
+                value={formData.contact_phone}
+                onChange={handleChange}
+                placeholder={t('auth.phone_placeholder')}
+                className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
+              />
             </div>
 
             <button

@@ -77,22 +77,20 @@ export function ForgotPassword() {
 
           {!isSent ? (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                  {t('auth.username')}
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder={t('auth.username_placeholder')}
-                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-bold text-lg transition-all"
-                    autoFocus
-                  />
+              <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                  <User className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">{t('auth.username')}</span>
                 </div>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={t('auth.username_placeholder')}
+                  className="flex-1 px-4 py-4 bg-transparent focus:outline-none font-bold text-lg transition-all"
+                  autoFocus
+                />
               </div>
 
               {error && (

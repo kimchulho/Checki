@@ -602,7 +602,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
   // Update Student
   app.post("/api/students", async (req, res) => {
-    const { placeId, userId, name, isEdu, birth_date, class_name, parent_contact, member_code } = req.body;
+    const { placeId, name, isEdu, birth_date, class_name, parent_contact, member_code } = req.body;
     const supabase = getSupabaseAdmin() || getSupabase();
     if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
 
@@ -623,8 +623,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       let memberData: any = {
         name,
-        place_id: placeId,
-        ...(userId && { user_id: userId })
+        place_id: placeId
       };
 
       if (isEdu) {

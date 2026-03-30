@@ -152,15 +152,18 @@ export function AdminSettings() {
               <p className="text-sm text-slate-500 font-medium">{t('admin.settings.current_email')}: <span className="text-slate-800 font-bold">{email}</span></p>
             </div>
             <form onSubmit={handleUpdateEmail} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('admin.settings.new_email')}</label>
+              <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                  <Mail className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">{t('admin.settings.new_email')}</span>
+                </div>
                 <input
                   type="email"
                   required
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder={t('admin.settings.new_email_placeholder')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
+                  className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
                 />
               </div>
               <button
@@ -180,8 +183,11 @@ export function AdminSettings() {
               {t('admin.settings.password_change')}
             </h2>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('admin.settings.new_password')}</label>
+              <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                  <Lock className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">{t('admin.settings.new_password')}</span>
+                </div>
                 <input
                   type="password"
                   required
@@ -189,11 +195,14 @@ export function AdminSettings() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder={t('admin.settings.new_password_placeholder')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
+                  className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('admin.settings.confirm_password')}</label>
+              <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                  <Lock className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">{t('admin.settings.confirm_password')}</span>
+                </div>
                 <input
                   type="password"
                   required
@@ -201,7 +210,7 @@ export function AdminSettings() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder={t('admin.settings.confirm_password_placeholder')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 font-medium transition-all"
+                  className="flex-1 px-4 py-3 bg-transparent focus:outline-none font-medium text-sm"
                 />
               </div>
               <button

@@ -1983,11 +1983,14 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     setSearchTerm(''); // Clear search term when switching tabs
     if (activeTab === 'students') {
       fetchStudents();
+      fetchTerminals();
     } else if (activeTab === 'terminals') {
       fetchTerminals();
+      fetchStudents();
     } else if (activeTab === 'attendance') {
       fetchAttendance();
       fetchStudents();
+      fetchTerminals();
     }
   }, [activeTab]);
 
@@ -2080,9 +2083,6 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         throw new Error(t('admin.messages.already_registered_name'));
       }
 
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData.user?.id;
-
       const response = await fetch('/api/students', {
         method: 'POST',
         headers: {
@@ -2090,7 +2090,6 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         },
         body: JSON.stringify({
           placeId,
-          userId,
           name: newStudent.name,
           isEdu: placeInfo?.mode === 'edu',
           birth_date: newStudent.birth_date || null,
@@ -2835,23 +2834,35 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
           </button>
           <button
             onClick={() => setActiveTab('students')}
-            className={`flex flex-col items-center gap-1 p-2 w-full rounded-xl transition-all ${
+            className={`relative flex flex-col items-center gap-1 p-2 w-full rounded-xl transition-all ${
               activeTab === 'students'
                 ? 'text-orange-500'
                 : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
             }`}
           >
+            {!isLoadingStudents && studentsList.length === 0 && (
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce z-50">
+                멤버를 등록해주세요.
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-orange-500 rotate-45"></div>
+              </div>
+            )}
             <Users className="w-6 h-6" />
             <span className="text-[10px] font-bold">{t('admin.tabs.members')}</span>
           </button>
           <button
             onClick={() => setActiveTab('terminals')}
-            className={`flex flex-col items-center gap-1 p-2 w-full rounded-xl transition-all ${
+            className={`relative flex flex-col items-center gap-1 p-2 w-full rounded-xl transition-all ${
               activeTab === 'terminals'
                 ? 'text-orange-500'
                 : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
             }`}
           >
+            {!isLoadingTerminals && terminalsList.length === 0 && (
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce z-50">
+                단말기를 등록해주세요.
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-orange-500 rotate-45"></div>
+              </div>
+            )}
             <Smartphone className="w-6 h-6" />
             <span className="text-[10px] font-bold">{t('admin.tabs.terminals')}</span>
           </button>
@@ -2945,10 +2956,8 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                     disabled={isSaving}
                     className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-300 text-white rounded-2xl font-bold text-lg shadow-lg shadow-orange-100 transition-all flex items-center justify-center gap-2 mt-4"
                   >
-                    {isSaving ? (
+                    {isSaving && (
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Save className="w-5 h-5" />
                     )}
                     <span>{t('admin.messages.save')}</span>
                   </button>
@@ -4268,8 +4277,10 @@ function HistoryView() {
             </div>
 
             <form onSubmit={handleSearch} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">출석 번호 (4자리)</label>
+              <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all overflow-hidden">
+                <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                  <span className="text-xs font-bold uppercase tracking-widest">출석 번호 (4자리)</span>
+                </div>
                 <input 
                   required
                   type="text"
@@ -4277,18 +4288,20 @@ function HistoryView() {
                   placeholder="예: 1234"
                   value={memberCode}
                   onChange={e => setStudentId(e.target.value)}
-                  className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono font-bold text-lg"
+                  className="flex-1 px-4 py-4 bg-transparent focus:outline-none font-mono font-bold text-lg"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">학부모 연락처 (뒤 4자리 이상)</label>
+              <div className="relative flex items-center bg-slate-50 border border-slate-100 rounded-2xl focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all overflow-hidden">
+                <div className="pl-4 pr-3 py-3 flex items-center gap-2 text-slate-400 bg-slate-100/50 border-r border-slate-100 min-w-[110px]">
+                  <span className="text-xs font-bold uppercase tracking-widest">학부모 연락처 (뒤 4자리 이상)</span>
+                </div>
                 <input 
                   required
                   type="password"
                   placeholder="연락처 입력"
                   value={parentContact}
                   onChange={e => setParentContact(e.target.value)}
-                  className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-bold text-lg"
+                  className="flex-1 px-4 py-4 bg-transparent focus:outline-none font-bold text-lg"
                 />
               </div>
               <button 
