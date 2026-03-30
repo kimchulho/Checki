@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Routes, Route, useNavigate, useLocation, Link, useSearchParams, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff, Smartphone, Link2, Home, School, Building } from 'lucide-react';
+import { Camera, Delete, Check, Clock, User, Zap, ShieldCheck, UserCheck, LayoutDashboard, ArrowLeft, Search, Calendar, UserPlus, Save, X, Image as ImageIcon, Eye, Phone, History, ChevronRight, ChevronLeft, ChevronDown, Lock, Users, Edit, Trash2, BellOff, Bell, LogOut, ArrowRight, AlertCircle, Settings, MapPin, MapPinOff, SwitchCamera, RefreshCw, Download, SmartphoneCharging, Pointer, CreditCard, CameraOff, Smartphone, Link2, Home, School, Building, Bluetooth, BluetoothOff } from 'lucide-react';
 import { encryptBlob, uploadAttendanceData, decryptBlob } from './services/securityService';
 import { supabase } from './services/supabaseClient';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -324,6 +324,7 @@ function AttendanceView({
   const [selectedActivityToConfirm, setSelectedActivityToConfirm] = useState<string | null>(null);
   const [customActivity, setCustomActivity] = useState<string | null>(null);
   const [keypadInput, setKeypadInput] = useState('');
+  const [isBluetoothEnabled, setIsBluetoothEnabled] = useState(false);
   const navigate = useNavigate();
 
   const handleActivitySelect = (activity: string) => {
@@ -680,6 +681,13 @@ function AttendanceView({
                 <Download className="w-4 h-4" />
               </button>
             )}
+            <button
+              onClick={() => setIsBluetoothEnabled(!isBluetoothEnabled)}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isBluetoothEnabled ? 'bg-blue-100 text-blue-500 hover:bg-blue-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+              title={isBluetoothEnabled ? t('terminal.messages.bluetooth_on', '블루투스 켜짐') : t('terminal.messages.bluetooth_off', '블루투스 꺼짐')}
+            >
+              {isBluetoothEnabled ? <Bluetooth className="w-4 h-4" /> : <BluetoothOff className="w-4 h-4" />}
+            </button>
             <div
               className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors bg-slate-100 text-slate-400`}
               title={currentLocation ? t('terminal.messages.gps_receiving') : t('terminal.messages.gps_not_receiving')}
@@ -2518,19 +2526,21 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
               </AnimatePresence>
             </div>
 
-            <button
-              onClick={() => {
-                const url = `${window.location.origin}/history/${placeInfo?.id}`;
-                navigator.clipboard.writeText(url);
-                setNotification({ message: t('admin.messages.copy_link_success'), type: 'success' });
-                setTimeout(() => setNotification(null), 3000);
-              }}
-              className="flex items-center gap-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-colors p-2 rounded-xl"
-              title={t('admin.buttons.copy_guest_link')}
-            >
-              <Link2 className="w-5 h-5" />
-              <span className="text-sm font-bold hidden sm:inline">{t('admin.buttons.copy_guest_link')}</span>
-            </button>
+            {placeInfo?.mode === 'edu' && (
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/history/${placeInfo?.id}`;
+                  navigator.clipboard.writeText(url);
+                  setNotification({ message: t('admin.messages.copy_link_success'), type: 'success' });
+                  setTimeout(() => setNotification(null), 3000);
+                }}
+                className="flex items-center gap-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-colors p-2 rounded-xl"
+                title={t('admin.buttons.copy_guest_link')}
+              >
+                <Link2 className="w-5 h-5" />
+                <span className="text-sm font-bold hidden sm:inline">{t('admin.buttons.copy_guest_link')}</span>
+              </button>
+            )}
 
             <Link 
               to="/admin/subscription"
