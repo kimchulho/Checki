@@ -327,6 +327,24 @@ function AttendanceView({
   const [isBluetoothEnabled, setIsBluetoothEnabled] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const nav = navigator as any;
+    if (nav.bluetooth && nav.bluetooth.getAvailability) {
+      nav.bluetooth.getAvailability().then((available: boolean) => {
+        setIsBluetoothEnabled(available);
+      });
+
+      const handleAvailabilityChange = (e: any) => {
+        setIsBluetoothEnabled(e.value);
+      };
+
+      nav.bluetooth.addEventListener('availabilitychanged', handleAvailabilityChange);
+      return () => {
+        nav.bluetooth.removeEventListener('availabilitychanged', handleAvailabilityChange);
+      };
+    }
+  }, []);
+
   const handleActivitySelect = (activity: string) => {
     if (selectedActivityToConfirm === activity) {
       setSelectedActivityToConfirm(null);
@@ -682,14 +700,26 @@ function AttendanceView({
               </button>
             )}
             <button
-              onClick={() => setIsBluetoothEnabled(!isBluetoothEnabled)}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isBluetoothEnabled ? 'bg-blue-100 text-blue-500 hover:bg-blue-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+              onClick={async () => {
+                const nav = navigator as any;
+                if (!nav.bluetooth) {
+                  alert(t('terminal.messages.bluetooth_unsupported', '이 브라우저에서는 블루투스를 지원하지 않습니다.'));
+                  return;
+                }
+                try {
+                  await nav.bluetooth.requestDevice({ acceptAllDevices: true });
+                  // The availabilitychanged event will handle updating the state
+                } catch (error) {
+                  console.log("Bluetooth request cancelled or failed:", error);
+                }
+              }}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors bg-slate-100 text-slate-400 hover:bg-slate-200"
               title={isBluetoothEnabled ? t('terminal.messages.bluetooth_on', '블루투스 켜짐') : t('terminal.messages.bluetooth_off', '블루투스 꺼짐')}
             >
               {isBluetoothEnabled ? <Bluetooth className="w-4 h-4" /> : <BluetoothOff className="w-4 h-4" />}
             </button>
             <div
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors bg-slate-100 text-slate-400`}
+              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${currentLocation ? 'bg-emerald-100 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}
               title={currentLocation ? t('terminal.messages.gps_receiving') : t('terminal.messages.gps_not_receiving')}
             >
               {currentLocation ? <MapPin className="w-4 h-4" /> : <MapPinOff className="w-4 h-4" />}
