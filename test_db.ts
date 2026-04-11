@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl!, supabaseKey!);
 
 async function checkSchema() {
   const { data, error } = await supabase
-    .from('checki_edu_members')
+    .from('edu_members')
     .select('*')
     .limit(1);
   console.log('Data:', data);

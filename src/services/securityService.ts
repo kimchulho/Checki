@@ -71,8 +71,8 @@ export async function decryptBlob(encryptedBlob: Blob, ivString: string): Promis
 
 /**
  * Uploads attendance data to Supabase.
- * Table name: checki_history
- * Storage bucket: checki-attendance-images
+ * Table name: history
+ * Storage bucket: attendance-images
  */
 export async function uploadAttendanceData(
   childName: string, 
@@ -100,7 +100,7 @@ export async function uploadAttendanceData(
       // 1. Upload encrypted image to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase
         .storage
-        .from('checki-attendance-images')
+        .from('attendance-images')
         .upload(fileName, encryptedBlob, {
           contentType: 'application/octet-stream',
           upsert: false
@@ -115,7 +115,7 @@ export async function uploadAttendanceData(
 
     // 2. Record attendance in the DB
     const { error: dbError } = await supabase
-      .from('checki_history')
+      .from('history')
       .insert([
         { 
           child_name: childName, 

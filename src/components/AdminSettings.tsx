@@ -74,8 +74,8 @@ export function AdminSettings() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem('checki_admin_auth');
-    localStorage.removeItem('checki_admin_place_info');
+    localStorage.removeItem('admin_auth');
+    localStorage.removeItem('admin_place_info');
     navigate('/admin/login');
   };
 
@@ -101,8 +101,8 @@ export function AdminSettings() {
       // 3. Delete auth user (Supabase auth.users is usually restricted from client, 
       // so backend should handle it or we just sign out if backend deleted it)
       await supabase.auth.signOut();
-      localStorage.removeItem('checki_admin_auth');
-      localStorage.removeItem('checki_admin_place_info');
+      localStorage.removeItem('admin_auth');
+      localStorage.removeItem('admin_place_info');
       navigate('/admin/login');
     } catch (err: any) {
       setMessage({ text: err.message || t('admin.settings.delete_error'), type: 'error' });

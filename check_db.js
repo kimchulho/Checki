@@ -11,8 +11,8 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function check() {
-  const { data, error } = await supabase.from('checki_edu_members').select('*').limit(1);
-  console.log('checki_edu_members:', { data, error });
+  const { data, error } = await supabase.from('edu_members').select('*').limit(1);
+  console.log('edu_members:', { data, error });
 }
 
 check();

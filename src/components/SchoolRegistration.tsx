@@ -39,7 +39,7 @@ export function SchoolRegistration() {
       if (authError) throw authError;
       if (!authData.user) throw new Error(t('auth.register_error'));
 
-      // 2. Call the backend API to register the school info in checki_places
+      // 2. Call the backend API to register the school info in places
       const response = await fetch('/api/register-school', {
         method: 'POST',
         headers: {

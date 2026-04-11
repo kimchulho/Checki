@@ -183,6 +183,10 @@ const resources = {
           "all": "전체"
         },
         "messages": {
+          "add_activities_tooltip": "활동을 추가해 보세요",
+          "enable_notifications_tooltip": "알림을 받아보세요",
+          "register_member_tooltip": "멤버를 등록해주세요.",
+          "register_terminal_tooltip": "단말기를 등록해주세요.",
           "loading": "데이터 불러오는 중...",
           "no_records": "기록이 없습니다.",
           "no_search_results": "검색 결과가 없습니다.",
@@ -592,6 +596,10 @@ const resources = {
           "all": "All"
         },
         "messages": {
+          "add_activities_tooltip": "Try adding activities",
+          "enable_notifications_tooltip": "Enable notifications",
+          "register_member_tooltip": "Please register a member.",
+          "register_terminal_tooltip": "Please register a terminal.",
           "loading": "Loading data...",
           "no_records": "No records found.",
           "no_search_results": "No search results found.",
@@ -1001,6 +1009,10 @@ const resources = {
           "all": "全て"
         },
         "messages": {
+          "add_activities_tooltip": "活動を追加してみてください",
+          "enable_notifications_tooltip": "通知を受け取る",
+          "register_member_tooltip": "メンバーを登録してください。",
+          "register_terminal_tooltip": "端末を登録してください。",
           "loading": "データを読み込み中...",
           "no_records": "記録がありません。",
           "no_search_results": "検索結果がありません。",

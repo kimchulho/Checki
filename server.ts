@@ -97,7 +97,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       if (memberType === 'home') {
         const { data: homeMembers, error: homeError } = await supabase
-          .from('checki_members')
+          .from('members')
           .select('id, name, place_id')
           .eq('place_id', placeId)
           .eq(searchColumn, searchValue)
@@ -106,7 +106,7 @@ const PORT = Number(process.env.PORT) || 3000;
         memberError = homeError;
       } else {
         const { data: eduMembers, error: eduError } = await supabase
-          .from('checki_edu_members')
+          .from('edu_members')
           .select('id, name, place_id, home_member_id, member_code')
           .eq('place_id', placeId)
           .eq(searchColumn, searchValue)
@@ -158,7 +158,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
             // 3. Fetch parent subscriptions using the home's place_id
             const { data: homeSubs, error: homeSubError } = await supabase
-              .from('checki_push_subscriptions')
+              .from('push_subscriptions')
               .select('subscription, phone_number, member_code, place_id')
               .eq('place_id', homePlaceId);
 
@@ -173,7 +173,7 @@ const PORT = Number(process.env.PORT) || 3000;
         if (member.member_code) memberIds.push(member.member_code);
 
         const { data: directSubs, error: directSubError } = await supabase
-          .from('checki_push_subscriptions')
+          .from('push_subscriptions')
           .select('subscription, phone_number, member_code, place_id')
           .eq('place_id', targetPlaceId)
           .in('member_code', memberIds);
@@ -304,7 +304,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       if (historyRecords.length > 0) {
         const { error: historyError } = await supabase
-          .from('checki_push_history')
+          .from('push_history')
           .insert(historyRecords);
           
         if (historyError) {
@@ -332,7 +332,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
     try {
       const { data, error } = await supabase
-        .from('checki_places')
+        .from('places')
         .select('email')
         .eq('username', username)
         .single();
@@ -362,7 +362,7 @@ const PORT = Number(process.env.PORT) || 3000;
     try {
       // Insert new place linked to Supabase Auth user_id
       const { data, error } = await supabase
-        .from('checki_places')
+        .from('places')
         .insert([
           {
             user_id,
@@ -400,7 +400,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
     try {
       const { data: place, error } = await supabase
-        .from('checki_places')
+        .from('places')
         .select('*')
         .eq('user_id', user_id)
         .single();
@@ -432,7 +432,7 @@ const PORT = Number(process.env.PORT) || 3000;
     try {
       // Get place_id first
       const { data: placeData, error: placeError } = await supabase
-        .from('checki_places')
+        .from('places')
         .select('id')
         .eq('user_id', user_id)
         .single();
@@ -445,18 +445,18 @@ const PORT = Number(process.env.PORT) || 3000;
         const placeId = placeData.id;
 
         // Delete attendance records related to this place
-        await supabase.from('checki_attendance').delete().eq('place_id', placeId);
+        await supabase.from('attendance').delete().eq('place_id', placeId);
         
         // Delete terminals related to this place
-        await supabase.from('checki_terminals').delete().eq('place_id', placeId);
+        await supabase.from('terminals').delete().eq('place_id', placeId);
         
         // Delete members related to this place
-        await supabase.from('checki_members').delete().eq('place_id', placeId);
-        await supabase.from('checki_edu_members').delete().eq('place_id', placeId);
+        await supabase.from('members').delete().eq('place_id', placeId);
+        await supabase.from('edu_members').delete().eq('place_id', placeId);
 
         // Delete place info
         const { error: dbError } = await supabase
-          .from('checki_places')
+          .from('places')
           .delete()
           .eq('id', placeId);
 
@@ -488,7 +488,7 @@ const PORT = Number(process.env.PORT) || 3000;
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
       const { error } = await supabase
-        .from('checki_kiosk_tokens')
+        .from('kiosk_tokens')
         .insert([{ place_id: placeId, token, expires_at: expiresAt }]);
 
       if (error) throw error;
@@ -510,7 +510,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
     try {
       const { data, error } = await supabase
-        .from('checki_kiosk_tokens')
+        .from('kiosk_tokens')
         .select('place_id, expires_at')
         .eq('token', token)
         .single();
@@ -525,7 +525,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       // Fetch place info
       const { data: place, error: placeError } = await supabase
-        .from('checki_places')
+        .from('places')
         .select('*')
         .eq('id', data.place_id)
         .single();
@@ -536,7 +536,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       // Determine the new terminal name
       const { data: existingTerminals } = await supabase
-        .from('checki_terminals')
+        .from('terminals')
         .select('name')
         .eq('place_id', data.place_id);
       
@@ -558,7 +558,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       // Create a new terminal entry
       const { data: terminal, error: terminalError } = await supabase
-        .from('checki_terminals')
+        .from('terminals')
         .insert([{ 
           place_id: data.place_id, 
           name: terminalName,
@@ -570,7 +570,7 @@ const PORT = Number(process.env.PORT) || 3000;
       if (terminalError) throw terminalError;
 
       // Delete the used token
-      await supabase.from('checki_kiosk_tokens').delete().eq('token', token);
+      await supabase.from('kiosk_tokens').delete().eq('token', token);
 
       const { password_hash, kiosk_password_hash, ...placeInfo } = place;
       res.json({ success: true, place: placeInfo, terminalId: terminal.id, terminalName: terminal.name });
@@ -588,7 +588,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
     try {
       const { data, error } = await supabase
-        .from('checki_terminals')
+        .from('terminals')
         .select('*')
         .eq('place_id', placeId)
         .order('created_at', { ascending: false });
@@ -694,7 +694,7 @@ const PORT = Number(process.env.PORT) || 3000;
       // 3. Update history if name changed (for backward compatibility with old records)
       if (oldStudent && oldStudent.name !== name && placeId) {
         await supabase
-          .from('checki_history')
+          .from('history')
           .update({ child_name: name })
           .eq('place_id', placeId)
           .eq('child_name', oldStudent.name);
@@ -716,7 +716,7 @@ const PORT = Number(process.env.PORT) || 3000;
     try {
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       const { error } = await supabase
-        .from('checki_edu_members')
+        .from('edu_members')
         .update({ invite_code: code })
         .eq('id', studentId)
         .eq('place_id', placeId as string);
@@ -738,7 +738,7 @@ const PORT = Number(process.env.PORT) || 3000;
     try {
       // 1. Find the edu student with the given invite code
       const { data: eduStudent, error: findError } = await supabase
-        .from('checki_edu_members')
+        .from('edu_members')
         .select('id')
         .eq('invite_code', invite_code)
         .single();
@@ -749,7 +749,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
       // 2. Link the home student to the edu student
       const { error: updateError } = await supabase
-        .from('checki_edu_members')
+        .from('edu_members')
         .update({ home_member_id: studentId })
         .eq('id', eduStudent.id);
 
@@ -771,7 +771,7 @@ const PORT = Number(process.env.PORT) || 3000;
     try {
       // Unlink the home student from the specific edu student
       const { error: updateError } = await supabase
-        .from('checki_edu_members')
+        .from('edu_members')
         .update({ home_member_id: null })
         .eq('id', edu_member_id)
         .eq('home_member_id', studentId);
@@ -791,7 +791,7 @@ const PORT = Number(process.env.PORT) || 3000;
     const supabase = getSupabaseAdmin() || getSupabase();
     if (!supabase) return res.status(500).json({ error: "Supabase not configured" });
 
-    const targetTable = isEdu === 'true' ? 'checki_edu_members' : 'checki_members';
+    const targetTable = isEdu === 'true' ? 'edu_members' : 'members';
 
     try {
       // 0. Fetch student name to delete history

@@ -115,7 +115,7 @@ function StoryCarousel() {
 
 function LandingPage() {
   const { t } = useTranslation();
-  const isLoggedIn = localStorage.getItem('checki_admin_auth') === 'true';
+  const isLoggedIn = localStorage.getItem('admin_auth') === 'true';
   
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -476,8 +476,8 @@ function AttendanceView({
         throw new Error(data.error || 'Login failed');
       }
 
-      localStorage.setItem('checki_kiosk_auth', 'true');
-      localStorage.setItem('checki_kiosk_place_info', JSON.stringify(data.place));
+      localStorage.setItem('kiosk_auth', 'true');
+      localStorage.setItem('kiosk_place_info', JSON.stringify(data.place));
       setKioskAuth(true);
       setKioskSchoolInfo(data.place);
       setUsername('');
@@ -494,9 +494,9 @@ function AttendanceView({
   };
 
   const confirmKioskLogout = () => {
-    localStorage.removeItem('checki_kiosk_auth');
-    localStorage.removeItem('checki_kiosk_place_info');
-    localStorage.removeItem('checki_terminal_id');
+    localStorage.removeItem('kiosk_auth');
+    localStorage.removeItem('kiosk_place_info');
+    localStorage.removeItem('terminal_id');
     setKioskAuth(false);
     setKioskSchoolInfo(null);
     setIsLogoutConfirmOpen(false);
@@ -1324,7 +1324,7 @@ function SubscriptionView() {
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
-        const placeInfoStr = localStorage.getItem('checki_admin_place_info');
+        const placeInfoStr = localStorage.getItem('admin_place_info');
         const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
         if (!placeInfo || !placeInfo.id) {
           setIsLoading(false);
@@ -1332,7 +1332,7 @@ function SubscriptionView() {
         }
 
         const { data, error } = await supabase
-          .from('checki_subscriptions')
+          .from('subscriptions')
           .select('*')
           .eq('place_id', placeInfo.id)
           .eq('status', 'active')
@@ -1392,7 +1392,7 @@ function SubscriptionView() {
   const handleSubscribe = async (plan: 'monthly' | 'yearly') => {
     setIsSubscribing(true);
     try {
-      const placeInfoStr = localStorage.getItem('checki_admin_place_info');
+      const placeInfoStr = localStorage.getItem('admin_place_info');
       const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
       
       if (!placeInfo || !placeInfo.id) {
@@ -1611,7 +1611,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
   const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
-  const placeInfoStr = localStorage.getItem('checki_admin_place_info');
+  const placeInfoStr = localStorage.getItem('admin_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
   const appTitle = t('admin.title');
 
@@ -1629,9 +1629,9 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     i18n.changeLanguage(lang);
     if (placeInfo?.id) {
       try {
-        await supabase.from('checki_places').update({ language: lang }).eq('id', placeInfo.id);
+        await supabase.from('places').update({ language: lang }).eq('id', placeInfo.id);
         const updatedPlace = { ...placeInfo, language: lang };
-        localStorage.setItem('checki_admin_place_info', JSON.stringify(updatedPlace));
+        localStorage.setItem('admin_place_info', JSON.stringify(updatedPlace));
       } catch (err) {
         console.error('Failed to update language in DB', err);
       }
@@ -1649,7 +1649,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         const { data } = await supabase
-          .from('checki_push_subscriptions')
+          .from('push_subscriptions')
           .select('id')
           .eq('place_id', placeInfo?.id)
           .contains('subscription', { endpoint: subscription.endpoint })
@@ -1689,7 +1689,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
       });
 
       const { error } = await supabase
-        .from('checki_push_subscriptions')
+        .from('push_subscriptions')
         .insert({
           place_id: placeInfo.id,
           member_code: 'ADMIN', // DB 제약 조건 방지를 위한 더미 값
@@ -1717,7 +1717,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
       if (subscription) {
         await subscription.unsubscribe();
         await supabase
-          .from('checki_push_subscriptions')
+          .from('push_subscriptions')
           .delete()
           .eq('place_id', placeInfo.id)
           .contains('subscription', { endpoint: subscription.endpoint });
@@ -1884,7 +1884,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     if (!selectedPhoto) return;
     const link = document.createElement('a');
     link.href = selectedPhoto.url;
-    link.download = `checki_${selectedPhoto.name}_${selectedPhoto.time.replace(/[:\s]/g, '_')}.png`;
+    link.download = `${selectedPhoto.name}_${selectedPhoto.time.replace(/[:\s]/g, '_')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1902,13 +1902,13 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     setIsLoadingLinkedMembers(true);
     try {
       const { data, error } = await supabase
-        .from('checki_edu_members')
+        .from('edu_members')
         .select(`
           id,
           name,
           invite_code,
           place_id,
-          checki_places (
+          places (
             name
           )
         `)
@@ -1940,7 +1940,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
 
       // 1. Fetch students
       let query = supabase
-        .from(placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
+        .from(placeInfo?.mode === 'edu' ? 'edu_members' : 'members')
         .select('*')
         .order('name', { ascending: true });
 
@@ -1956,14 +1956,14 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
       let eduToHomeMap: Record<string, string> = {};
       try {
         let historyQuery = supabase
-          .from('checki_history')
+          .from('history')
           .select('child_name, child_id, timestamp')
           .order('timestamp', { ascending: false });
 
         if (placeInfo?.mode === 'home' && students && students.length > 0) {
           const homeMemberIds = students.map(s => s.id);
           const { data: linkedEduMembers } = await supabase
-            .from('checki_edu_members')
+            .from('edu_members')
             .select('id, name, home_member_id')
             .in('home_member_id', homeMemberIds);
           
@@ -2028,7 +2028,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
   const fetchTerminals = async () => {
     setIsLoadingTerminals(true);
     try {
-      const placeInfoStr = localStorage.getItem('checki_admin_place_info');
+      const placeInfoStr = localStorage.getItem('admin_place_info');
       const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
       const placeId = placeInfo?.id;
 
@@ -2100,7 +2100,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
         throw new Error(t('admin.messages.no_place_info'));
       }
 
-      const targetTable = placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members';
+      const targetTable = placeInfo?.mode === 'edu' ? 'edu_members' : 'members';
 
       // Check if name already exists for this school
       const { data: existing, error: checkError } = await supabase
@@ -2275,6 +2275,9 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
     );
   });
 
+  const hasCustomActivities = terminalsList.some((t: any) => !(!t.activities || ['집,학교,외출', '등원,하원', '출근,퇴근'].includes((t.activities || []).join(','))));
+  const showNotificationTooltip = !isAdminSubscribed && studentsList.length > 0 && terminalsList.length > 0 && hasCustomActivities;
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <AnimatePresence>
@@ -2339,6 +2342,14 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
               </div>
 
               <div className="relative lg:hidden">
+                {showNotificationTooltip && !showNotificationSettings && (
+                  <div className="absolute top-full right-0 mt-3 z-50">
+                    <div className="bg-orange-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce relative">
+                      {t('admin.messages.enable_notifications_tooltip')}
+                      <div className="absolute -top-1 right-3 w-2 h-2 bg-orange-500 rotate-45"></div>
+                    </div>
+                  </div>
+                )}
                 <button 
                   onClick={() => setShowNotificationSettings(!showNotificationSettings)}
                   className={`flex items-center gap-2 transition-colors p-2 rounded-xl ${
@@ -2444,6 +2455,14 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
             </div>
 
             <div className="relative">
+              {showNotificationTooltip && !showNotificationSettings && (
+                <div className="absolute top-full right-0 mt-3 z-50">
+                  <div className="bg-orange-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce relative">
+                    {t('admin.messages.enable_notifications_tooltip')}
+                    <div className="absolute -top-1 right-6 w-2 h-2 bg-orange-500 rotate-45"></div>
+                  </div>
+                </div>
+              )}
               <button 
                 onClick={() => setShowNotificationSettings(!showNotificationSettings)}
                 className={`flex items-center gap-2 transition-colors p-2 rounded-xl ${
@@ -2836,7 +2855,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                         {(!terminal.activities || ['집,학교,외출', '등원,하원', '출근,퇴근'].includes((terminal.activities || []).join(','))) && (
                           <div className="absolute top-1/2 -translate-y-1/2 right-full mr-3 z-10">
                             <div className="bg-blue-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce relative">
-                              활동을 추가해 보세요
+                              {t('admin.messages.add_activities_tooltip')}
                               <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-blue-500 rotate-45"></div>
                             </div>
                           </div>
@@ -2885,7 +2904,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
           >
             {!isLoadingStudents && studentsList.length === 0 && (
               <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce z-50">
-                멤버를 등록해주세요.
+                {t('admin.messages.register_member_tooltip')}
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-orange-500 rotate-45"></div>
               </div>
             )}
@@ -2902,7 +2921,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
           >
             {!isLoadingTerminals && terminalsList.length === 0 && (
               <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-bounce z-50">
-                단말기를 등록해주세요.
+                {t('admin.messages.register_terminal_tooltip')}
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-orange-500 rotate-45"></div>
               </div>
             )}
@@ -3166,7 +3185,7 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                           {linkedEduMembers.map(eduMember => (
                             <div key={eduMember.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200">
                               <div>
-                                <div className="text-sm font-bold text-slate-700">{eduMember.checki_places?.name || '알 수 없는 학원'}</div>
+                                <div className="text-sm font-bold text-slate-700">{eduMember.places?.name || '알 수 없는 학원'}</div>
                                 <div className="text-xs text-slate-500">학생 이름: {eduMember.name} | 코드: {eduMember.invite_code}</div>
                               </div>
                               <button
@@ -3704,8 +3723,8 @@ function AdminView({ attendanceList, isLoadingAdmin, fetchAttendance }: any) {
                 </button>
                 <button
                   onClick={() => {
-                    localStorage.removeItem('checki_admin_auth');
-                    localStorage.removeItem('checki_admin_place_info');
+                    localStorage.removeItem('admin_auth');
+                    localStorage.removeItem('admin_place_info');
                     navigate('/admin/login');
                   }}
                   className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
@@ -3730,7 +3749,7 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
   const hasVerified = useRef(false);
   const isMounted = useRef(true);
 
-  const placeInfoStr = localStorage.getItem('checki_kiosk_place_info');
+  const placeInfoStr = localStorage.getItem('kiosk_place_info');
   const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
   const appTitle = t('admin.title');
 
@@ -3768,15 +3787,15 @@ function KioskSetup({ setKioskAuth, setKioskSchoolInfo, setTerminalName }: any) 
           throw new Error(data.error || '인증에 실패했습니다.');
         }
 
-        localStorage.setItem('checki_kiosk_auth', 'true');
-        localStorage.setItem('checki_kiosk_place_info', JSON.stringify(data.place));
-        localStorage.setItem('checki_terminal_id', data.terminalId);
+        localStorage.setItem('kiosk_auth', 'true');
+        localStorage.setItem('kiosk_place_info', JSON.stringify(data.place));
+        localStorage.setItem('terminal_id', data.terminalId);
         
         setKioskAuth(true);
         setKioskSchoolInfo(data.place);
         
         if (data.terminalName) {
-          localStorage.setItem('checki_terminal_name', data.terminalName);
+          localStorage.setItem('terminal_name', data.terminalName);
           setTerminalName(data.terminalName);
         }
         setStatus('success');
@@ -3871,7 +3890,7 @@ function HistoryView() {
   const fetchPlaceInfo = async (id: string) => {
     try {
       const { data, error } = await supabase
-        .from('checki_places')
+        .from('places')
         .select('*')
         .eq('id', id)
         .single();
@@ -3899,7 +3918,7 @@ function HistoryView() {
       let currentPlaceInfo = placeInfo;
       if (!currentPlaceInfo) {
         const { data, error } = await supabase
-          .from('checki_places')
+          .from('places')
           .select('*')
           .eq('id', targetPlaceId)
           .single();
@@ -3910,7 +3929,7 @@ function HistoryView() {
       }
 
       // 1. Verify student and parent contact
-      const targetTable = currentPlaceInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members';
+      const targetTable = currentPlaceInfo?.mode === 'edu' ? 'edu_members' : 'members';
       
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       let memberQuery = supabase
@@ -3927,8 +3946,8 @@ function HistoryView() {
       const { data: memberData, error: memberError } = await memberQuery.single();
 
       if (memberError || !memberData) {
-        if (localStorage.getItem('checki_parent_auth')) {
-             localStorage.removeItem('checki_parent_auth');
+        if (localStorage.getItem('parent_auth')) {
+             localStorage.removeItem('parent_auth');
              alert('멤버 정보를 찾을 수 없어 자동 로그인이 해제되었습니다.');
         } else {
              alert('멤버 정보를 찾을 수 없습니다.');
@@ -3941,8 +3960,8 @@ function HistoryView() {
       const inputContact = contact.replace(/[^0-9]/g, '');
 
       if (!storedContact.includes(inputContact) || inputContact.length < 4) {
-         if (localStorage.getItem('checki_parent_auth')) {
-             localStorage.removeItem('checki_parent_auth');
+         if (localStorage.getItem('parent_auth')) {
+             localStorage.removeItem('parent_auth');
              alert('연락처 정보가 변경되어 자동 로그인이 해제되었습니다.');
         } else {
              alert('연락처 정보가 일치하지 않습니다.');
@@ -3954,7 +3973,7 @@ function HistoryView() {
 
       // 2. Fetch attendance
       let attendanceQuery = supabase
-        .from('checki_history')
+        .from('history')
         .select('*')
         .eq('place_id', targetPlaceId)
         .order('timestamp', { ascending: false });
@@ -3971,7 +3990,7 @@ function HistoryView() {
       setAttendance(attendanceData || []);
       
       // Save session
-      localStorage.setItem('checki_parent_auth', JSON.stringify({ 
+      localStorage.setItem('parent_auth', JSON.stringify({ 
         memberCode: id, 
         parentContact: contact,
         placeId: targetPlaceId 
@@ -3990,7 +4009,7 @@ function HistoryView() {
     const idFromUrl = searchParams.get('id');
     const keyFromUrl = searchParams.get('key');
     const placeIdFromUrl = searchParams.get('placeId') || urlPlaceId;
-    const savedAuth = localStorage.getItem('checki_parent_auth');
+    const savedAuth = localStorage.getItem('parent_auth');
 
     if (idFromUrl && keyFromUrl) {
       // Magic Link Login (Highest Priority)
@@ -4027,7 +4046,7 @@ function HistoryView() {
           authenticateUser(savedId, savedContact, savedSchoolId);
         }
       } catch (e) {
-        localStorage.removeItem('checki_parent_auth');
+        localStorage.removeItem('parent_auth');
       }
     } else if (idFromUrl) {
       setStudentId(idFromUrl);
@@ -4054,7 +4073,7 @@ function HistoryView() {
 
   const handleLogout = () => {
     if (confirm('로그아웃 하시겠습니까?')) {
-      localStorage.removeItem('checki_parent_auth');
+      localStorage.removeItem('parent_auth');
       setIsSearched(false);
       setStudentId('');
       setParentContact('');
@@ -4130,7 +4149,7 @@ function HistoryView() {
       // Save subscription to Supabase
       // Check if this specific subscription already exists to avoid duplicates
       const { data: existing } = await supabase
-        .from('checki_push_subscriptions')
+        .from('push_subscriptions')
         .select('id')
         .eq('member_code', studentInfo.id)
         .contains('subscription', { endpoint: subscription.endpoint })
@@ -4138,7 +4157,7 @@ function HistoryView() {
 
       if (!existing) {
         const { error } = await supabase
-          .from('checki_push_subscriptions')
+          .from('push_subscriptions')
           .insert({
             member_code: studentInfo.id,
             phone_number: parentContact,
@@ -4149,7 +4168,7 @@ function HistoryView() {
       } else {
         // Update phone number if it's missing or changed
         await supabase
-          .from('checki_push_subscriptions')
+          .from('push_subscriptions')
           .update({ phone_number: parentContact })
           .eq('id', existing.id);
       }
@@ -4177,7 +4196,7 @@ function HistoryView() {
         // Remove from Supabase using phone_number OR member_code to cover all bases
         // This ensures we remove the device for this parent across all their students/schools
         const { error } = await supabase
-          .from('checki_push_subscriptions')
+          .from('push_subscriptions')
           .delete()
           .or(`phone_number.eq.${parentContact},member_code.eq.${studentInfo.id}`)
           .contains('subscription', { endpoint: subscription.endpoint });
@@ -4538,7 +4557,7 @@ function HistoryView() {
                   onClick={() => {
                     const link = document.createElement('a');
                     link.href = selectedPhoto.url;
-                    link.download = `checki_attendance_${selectedPhoto.time.replace(/[:\s]/g, '_')}.png`;
+                    link.download = `attendance_${selectedPhoto.time.replace(/[:\s]/g, '_')}.png`;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -4581,7 +4600,7 @@ function HistoryView() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('checki_admin_auth') === 'true');
+  const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('admin_auth') === 'true');
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
@@ -4592,15 +4611,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       if (autoLogin === 'true' && placeId) {
         try {
           const { data, error } = await supabase
-            .from('checki_places')
+            .from('places')
             .select('*')
             .eq('id', placeId)
             .single();
 
           if (error) throw error;
           if (data) {
-            localStorage.setItem('checki_admin_auth', 'true');
-            localStorage.setItem('checki_admin_place_info', JSON.stringify(data));
+            localStorage.setItem('admin_auth', 'true');
+            localStorage.setItem('admin_place_info', JSON.stringify(data));
             setIsAuthenticated(true);
             setIsChecking(false);
             // Remove query params from URL to clean it up
@@ -4612,7 +4631,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         }
       }
       
-      const isAuth = localStorage.getItem('checki_admin_auth') === 'true';
+      const isAuth = localStorage.getItem('admin_auth') === 'true';
       if (!isAuth) {
         navigate('/admin/login');
       } else {
@@ -4679,9 +4698,9 @@ export default function App() {
   }, [kioskSchoolInfo, currentCheckiMode]);
 
   useEffect(() => {
-    const auth = localStorage.getItem('checki_kiosk_auth');
-    const info = localStorage.getItem('checki_kiosk_place_info');
-    const name = localStorage.getItem('checki_terminal_name');
+    const auth = localStorage.getItem('kiosk_auth');
+    const info = localStorage.getItem('kiosk_place_info');
+    const name = localStorage.getItem('terminal_name');
     if (auth === 'true' && info) {
       setKioskAuth(true);
       const parsedInfo = JSON.parse(info);
@@ -4706,14 +4725,14 @@ export default function App() {
       const fetchLatestPlaceInfo = async () => {
         try {
           const { data, error } = await supabase
-            .from('checki_places')
+            .from('places')
             .select('*')
             .eq('id', kioskSchoolInfo.id)
             .single();
           
           if (data) {
             setKioskSchoolInfo(data);
-            localStorage.setItem('checki_kiosk_place_info', JSON.stringify(data));
+            localStorage.setItem('kiosk_place_info', JSON.stringify(data));
           }
         } catch (err) {
           console.error('Failed to fetch latest place info', err);
@@ -4721,16 +4740,16 @@ export default function App() {
       };
       fetchLatestPlaceInfo();
       
-      const channel = supabase.channel(`public:checki_places:${kioskSchoolInfo.id}`)
+      const channel = supabase.channel(`public:places:${kioskSchoolInfo.id}`)
         .on('postgres_changes', { 
           event: 'UPDATE', 
           schema: 'public', 
-          table: 'checki_places', 
+          table: 'places', 
           filter: `id=eq.${kioskSchoolInfo.id}` 
         }, (payload) => {
           if (payload.new) {
             setKioskSchoolInfo(payload.new);
-            localStorage.setItem('checki_kiosk_place_info', JSON.stringify(payload.new));
+            localStorage.setItem('kiosk_place_info', JSON.stringify(payload.new));
           }
         })
         .subscribe();
@@ -4746,16 +4765,16 @@ export default function App() {
     if (!kioskAuth || location.pathname !== '/kiosk') return;
 
     const checkTerminalStatus = async () => {
-      const terminalId = localStorage.getItem('checki_terminal_id');
+      const terminalId = localStorage.getItem('terminal_id');
       if (!terminalId) return;
 
       try {
         const response = await fetch(`/api/terminals/${terminalId}/status`);
         if (response.status === 404) {
           // Terminal was deleted from admin
-          localStorage.removeItem('checki_kiosk_auth');
-          localStorage.removeItem('checki_kiosk_place_info');
-          localStorage.removeItem('checki_terminal_id');
+          localStorage.removeItem('kiosk_auth');
+          localStorage.removeItem('kiosk_place_info');
+          localStorage.removeItem('terminal_id');
           setKioskAuth(false);
           setKioskSchoolInfo(null);
           setTerminalName('');
@@ -4766,7 +4785,7 @@ export default function App() {
         const data = await response.json();
         if (data.name) {
           setTerminalName(data.name);
-          localStorage.setItem('checki_terminal_name', data.name);
+          localStorage.setItem('terminal_name', data.name);
         }
         if (data.activities && Array.isArray(data.activities) && data.activities.length > 0) {
           setTerminalActivities(data.activities);
@@ -4792,7 +4811,7 @@ export default function App() {
             setCurrentLocation({ lat: latitude, lng: longitude });
             
             // Update terminal location on server
-            const terminalId = localStorage.getItem('checki_terminal_id');
+            const terminalId = localStorage.getItem('terminal_id');
             if (terminalId) {
               fetch(`/api/terminals/${terminalId}/location`, {
                 method: 'POST',
@@ -4801,9 +4820,9 @@ export default function App() {
               }).then(async (res) => {
                 if (res.status === 404) {
                   // Terminal was deleted from admin
-                  localStorage.removeItem('checki_kiosk_auth');
-                  localStorage.removeItem('checki_kiosk_place_info');
-                  localStorage.removeItem('checki_terminal_id');
+                  localStorage.removeItem('kiosk_auth');
+                  localStorage.removeItem('kiosk_place_info');
+                  localStorage.removeItem('terminal_id');
                   setKioskAuth(false);
                   setKioskSchoolInfo(null);
                   setTerminalName('');
@@ -4827,7 +4846,7 @@ export default function App() {
   
   // Redirect if already in kiosk mode
   useEffect(() => {
-    const auth = localStorage.getItem('checki_kiosk_auth');
+    const auth = localStorage.getItem('kiosk_auth');
     if (auth === 'true' && location.pathname === '/') {
       navigate('/kiosk');
     }
@@ -4847,13 +4866,13 @@ export default function App() {
   const fetchAttendance = async () => {
     setIsLoadingAdmin(true);
     try {
-      const placeInfoStr = localStorage.getItem('checki_admin_place_info');
+      const placeInfoStr = localStorage.getItem('admin_place_info');
       const placeInfo = placeInfoStr ? JSON.parse(placeInfoStr) : null;
       const placeId = placeInfo?.id;
 
       // 1. Fetch attendance records
       let query = supabase
-        .from('checki_history')
+        .from('history')
         .select('*')
         .order('timestamp', { ascending: false });
 
@@ -4867,7 +4886,7 @@ export default function App() {
 
       // 2. Fetch all students to join manually (more robust if foreign keys aren't set)
       let studentsQuery = supabase
-        .from(placeInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
+        .from(placeInfo?.mode === 'edu' ? 'edu_members' : 'members')
         .select('*');
 
       if (placeId) {
@@ -4885,7 +4904,7 @@ export default function App() {
       if (placeInfo?.mode === 'home' && studentsData && studentsData.length > 0) {
         const homeMemberIds = studentsData.map(s => s.id);
         const { data: linkedEduMembers } = await supabase
-          .from('checki_edu_members')
+          .from('edu_members')
           .select('id, name, place_id, class_name')
           .in('home_member_id', homeMemberIds);
 
@@ -4894,7 +4913,7 @@ export default function App() {
           const eduMemberNames = linkedEduMembers.map(s => s.name);
           const eduPlaceIds = [...new Set(linkedEduMembers.map(s => s.place_id))];
           const { data: eduAttendance } = await supabase
-            .from('checki_history')
+            .from('history')
             .select('*')
             .in('child_name', eduMemberNames)
             .in('place_id', eduPlaceIds)
@@ -4910,7 +4929,7 @@ export default function App() {
 
       // 3. Fetch all terminals to join manually (remove place_id filter to be more robust for joining)
       const { data: terminalsData, error: terminalsError } = await supabase
-        .from('checki_terminals')
+        .from('terminals')
         .select('*');
       
       if (terminalsError) throw terminalsError;
@@ -5066,7 +5085,7 @@ export default function App() {
       let memberId: string | undefined;
       try {
         const { data } = await supabase
-          .from(kioskSchoolInfo?.mode === 'edu' ? 'checki_edu_members' : 'checki_members')
+          .from(kioskSchoolInfo?.mode === 'edu' ? 'edu_members' : 'members')
           .select('id')
           .eq('name', childName)
           .eq('place_id', kioskSchoolInfo?.id)
@@ -5078,8 +5097,8 @@ export default function App() {
       }
 
       const placeId = kioskSchoolInfo?.id;
-      const terminalId = localStorage.getItem('checki_terminal_id') || undefined;
-      const terminalName = localStorage.getItem('checki_terminal_name') || undefined;
+      const terminalId = localStorage.getItem('terminal_id') || undefined;
+      const terminalName = localStorage.getItem('terminal_name') || undefined;
 
       if (!placeId) {
         throw new Error('기관 정보(placeId)를 찾을 수 없습니다. 다시 로그인해 주세요.');

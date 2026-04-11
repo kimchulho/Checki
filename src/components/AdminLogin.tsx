@@ -57,8 +57,8 @@ export function AdminLogin() {
         throw new Error(data.error || t('auth.login_error'));
       }
 
-      localStorage.setItem('checki_admin_auth', 'true');
-      localStorage.setItem('checki_admin_place_info', JSON.stringify(data.place));
+      localStorage.setItem('admin_auth', 'true');
+      localStorage.setItem('admin_place_info', JSON.stringify(data.place));
       navigate('/admin');
     } catch (err: any) {
       console.error('Login error:', err);
